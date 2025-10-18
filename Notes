@@ -1,0 +1,115 @@
+1. Initialize your Node project
+   npm init -y
+
+2. Install required packages
+   npm install express body-parser sequelize mysql2
+   npm install --save-dev typescript ts-node @types/express @types/body-parser @types/node
+
+3. Create a tsconfig.json file
+   npx tsc --init
+
+## Updated Entity Relationship Design
+
+Customer 1───∞ Wallet 1───∞ Transaction
+
+- A Customer can own multiple wallets.
+- Each Wallet can have many Transactions (credit/debit history).
+- Transactions reference both the source and destination wallets
+  (for transfers).
+
+Optional Enhancements
+Add agent or bankBranch relationships (for agency banking tracking)
+Add transactionStatus (pending, successful, failed)
+Add createdBy for audit trail
+Include sequelize.sync({ alter: true }) during development to auto-sync tables
+
+Relationship Summary
+Model Association Description
+Customer → Wallet 1:Many Each customer has one wallet
+Wallet → Transaction 1:Many Each wallet has many transactions
+Transaction → Wallet Many:1 Transaction belongs to one wallet
+Transaction → Wallet for transfers Records sender and receiver (source/destination)
+
+What is a Transaction?
+In databases (like MySQL, Postgres, etc.), a transaction is a temporary
+session that groups multiple SQL operations together so they either
+all succeed or all fail.
+
+const t = await sequelize.transaction();
+
+In Sequelize, calling the above starts a new database transaction and
+gives you a Transaction object (t). That object represents the active
+transaction connection.
+
+Why Wallet.sequelize?.transaction() ?
+Here, instead of using the global sequelize instance directly, you’re
+accessing it from the model: Wallet.sequelize
+Every Sequelize model keeps a reference to the Sequelize instance that
+created it. So Wallet.sequelize is just your main connection object.
+
+Why do we save with { transaction: t } ?
+That { transaction: t } tells Sequelize:
+
+"Perform this .save() inside the transaction t."
+So this operation won’t be permanently committed to the database
+until you explicitly commit the transaction later.
+
+.transaction() starts a safe “sandbox” where you can make changes.
+{ transaction: t } ensures those changes stay inside that sandbox
+until you say they’re final (commit) or discarded (rollback).
+
+---MODELS DESCRIPTIONS---
+Customer model – holds personal info
+Wallet model – holds balance, belongs to customer
+Transaction model – tracks credits, debits, transfers
+
+----REST API routes (Express controllers):----
+POST /customers → create customer + wallet
+POST /wallets/credit → credit wallet
+POST /wallets/transfer → handle transfers and transaction records
+GET /wallets/:id/transactions → fetch transaction history
+
+customers.id ← wallets.customerId
+A relational database mapping expression, and it means:
+The customerId column in the wallets table is a foreign key that
+references the id column in the customers table.
+
+Customer.hasOne(Wallet, { foreignKey: "customerId", as: "wallet" });
+Meaning:
+-- A Customer can have one Wallet.
+-- The Wallet table will have a foreign key column called customerId
+linking to the Customer’s id.
+-- Sequelize will know this relationship and allow you to access it
+via the alias "wallet".
+
+So now you can do:
+const customer = await Customer.findByPk(1, { include: ["wallet"] });
+console.log(customer.wallet.balance);
+
+The Reverse Association
+Wallet.belongsTo(Customer, { foreignKey: "customerId", as: "customer" });
+
+Meaning:
+--A Wallet belongs to one Customer.
+--The foreignKey field (customerId) is stored inside the Wallet table.
+--The alias "customer" lets you reference the linked customer easily.
+
+So now you can do:
+const wallet = await Wallet.findByPk(10, { include: ["customer"] });
+console.log(wallet.customer.fullName);
+
+Because of the earlier definition with alias as: "customer",
+So when you write:
+include: ["customer"] it tells Sequelize to perform a SQL JOIN behind the scenes.
+
+The alias is actually about the type of relationship you defined.
+The alias controls how you’ll later reference the relation in your
+code and queries (include: ["wallets"] vs include: ["wallet"]).
+In Sequelize associations, the alias you choose (as) represents how
+many of the related model instances exist on the other side.
+
+Relationship Type Example Typical Alias Form Why
+One-to-One Customer.hasOne(Wallet) Singular ("wallet") Each customer has one wallet
+Belongs-To Wallet.belongsTo(Customer) Singular ("customer") Each wallet belongs to one customer
+One-to-Many Customer.hasMany(Wallet) Plural ("wallets") Each customer has many wallets
+Many-to-Many Student.belongsToMany(Course) Plural ("courses") Each student belongs to many courses, and vice versa

@@ -1,0 +1,40 @@
+7. Observability & Ops
+
+- Monitoring: track metrics for job queue (queued, failed, processed), 
+counts of PENDING transactions older than X seconds, reversal counts.
+
+- Alerts: create alerts for high PENDING counts and frequent reversals.
+- Retries and Dead-Letter: failed reversal jobs should go to a 
+dead-letter queue with manual Ops alerting — do not keep retrying forever.
+
+- Audit logs: transaction_histories are append-only and can be exported 
+for reconciliation.
+
+- Security: ensure DB credentials, Redis, and queues are secured and 
+authenticated.
+
+Rate limiting: protect workers from overloaded downstream systems.
+
+8. Best-practice checklist (short)
+ - Use DB transactions and row-level locks when updating balances.
+ - Use idempotency keys for client requests.
+ - Enqueue credit actions to a durable worker queue (BullMQ/Rabbit/Kafka).
+ - Use retries with exponential backoff for transient failures.
+ - Schedule a delayed reversal job after retry exhaustion.
+ - Make reversal idempotent and atomic, and guard for race conditions.
+ - Persist a complete audit trail (TransactionHistory).
+ - Alert/monitor PENDING, REVERSED, FAILED transaction rates.
+ - Apply strong logging and error handling in workers.
+
+9. Extra ideas (optional improvements)
+
+Use SAGA orchestration service if you have many downstream services 
+(SMS, clearing house).
+
+Implement two-phase commit only when using the same DB — but avoid 
+distributed 2PC across services; prefer SAGA.
+
+Use CDC-based reconciliation (Debezium) to feed ledger into a 
+separate accounting system for reconciliation.
+
+Add manual remediation UI for Ops to inspect and fix stuck transactions.

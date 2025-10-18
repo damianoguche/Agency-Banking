@@ -1,0 +1,183 @@
+Banking Transaction Failure Scenario.
+--------------------------------------
+1. Understanding What Happened (the symptom)
+
+Symptom:
+The debit leg (sender’s account) succeeded.
+The credit leg (receiver’s account) failed.
+The reversal (rollback or compensation) did not happen.
+The system ends up inconsistent — money appears “missing”.
+
+2. Root Causes — Technical Scenarios
+Let’s look at what could have gone wrong technically.
+
+a. Partial Transaction Commit (Missing Atomicity)
+If the debit and credit are not done atomically — e.g., separate 
+database calls or service calls — one can succeed while the other 
+fails.
+
+b. Network / Middleware Failure
+Even when both debit and credit succeed internally, the network may 
+fail to return a success response, so the mobile app (or middleware) 
+thinks something failed and doesn’t retry or confirm.
+
+Example:
+Debit succeeds on the core banking system.
+The response times out.
+The credit step never executes due to timeout.
+Root cause: Communication failure between channels 
+(mobile app ↔ middleware ↔ core banking).
+
+c. Downstream System Failure
+
+If the receiving system (e.g., destination bank, wallet, or payment 
+switch) is unavailable, the sender’s debit might still post before the 
+credit is confirmed.
+
+Root cause: Lack of two-phase commit or guaranteed message delivery.
+
+d. Application Crash or Process Interruption
+If the application crashes or restarts after debit but before credit, 
+the transaction state is lost. Rollback failure.
+
+Root cause: No persistent transaction log or recovery mechanism.
+
+e. Asynchronous Queue Failures
+If the credit instruction is queued (for example, using Kafka or 
+RabbitMQ) and the message is lost or not processed, the debit stays without a matching credit.
+
+Root cause: Poor queue durability or retry configuration.
+
+How It Should Work (The Ideal)
+A fund transfer should be atomic — both debit and credit happen 
+together or not at all.
+
+In database terms:
+const t = await sequelize.transaction();
+
+try {
+  await debit(sender, amount, { transaction: t });
+  await credit(receiver, amount, { transaction: t });
+  await t.commit();
+} catch (err) {
+  await t.rollback();
+}
+
+
+If either debit or credit fails, the entire transaction rolls back — 
+so no partial posting.
+
+In distributed systems, where sender and receiver are on different 
+services or databases, use:
+ - Two-Phase Commit (2PC), or
+ - Outbox Pattern + SAGA pattern for compensating transactions.
+
+
+ How It Can Be Resolved (Operationally)
+------------------------------------------
+If such an issue already occurred in production:
+
+a. Transaction Reconciliation
+- Compare debit logs vs credit logs:
+- Find transactions where debit = success but credit = missing.
+- Check transaction reference IDs and timestamps.
+
+b. Investigate Middleware Logs
+- Trace the API call chain (mobile app → middleware → core banking).
+- Find where the process broke.
+
+c. Retry or Manual Reversal
+If credit failed:
+- Reprocess the credit to the receiver, or
+- Reverse the debit back to sender.
+
+Typically handled by:
+- Reconciliation scripts/jobs, or
+- Operations/Settlement team (via dispute resolution queue).
+
+d. Root Cause Fix
+- Implement atomic transaction control (DB transaction or distributed 
+lock).
+- Add message retry and delivery confirmation.
+- Use transaction state tracking table to ensure "no lost leg"
+- Build automated reconciliation jobs that flag incomplete 
+transactions for review.
+
+Long-term / Preventive Resolution
+
+| Fix                                          | Description                                                                         |
+| -------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Use atomic database transactions         | Wrap debit and credit in a single transaction so both succeed or both fail.         |
+| Implement retry & idempotency*           | If a network fails, the system can retry without double posting.                    |
+| Use message queues with durable delivery | Ensures no leg of a transaction is lost.                                            |
+| Add reconciliation & recovery jobs       | Detect and automatically resolve incomplete transactions.                           |
+| Implement the Outbox or SAGA pattern     | In microservices, these guarantee eventual consistency and compensation on failure. |
+| Improve monitoring & alerting            | Early detection of “debit-only” anomalies.                                          |
+
+
+| Problem                          | Prevention                                |
+| -------------------------------- | ----------------------------------------- |
+| Debit succeeds, credit fails     | Both wrapped in one transaction           |
+| Race condition (double spending) | Row-level locking with `FOR UPDATE`       |
+| Inconsistent balances            | Transaction rollback guarantees integrity |
+| Concurrent transfers             | Isolation level prevents dirty reads      |
+
+
+Optional Enhancements
+- Implement retry logic for transient errors.
+- Make the operation idempotent — same transaction reference won’t post 
+twice.
+- Add reconciliation scripts to verify posted transactions daily.
+- Automated reconciliation job comparing wallet balances vs. 
+transaction sum
+- Webhook or message queue for notifying mobile app users
+- Audit log triggers at the DB level for non-repudiation
+
+a. Audit Log
+An audit log (or audit trail) is a record of all activities or changes 
+that occur in a system — especially those that affect sensitive data 
+or transactions.
+
+It answers questions like:
+- Who did what?
+- When did they do it?
+- What data was changed?
+- From where (IP, device, etc.)?
+
+b. Triggers at the DB Level
+A trigger is a special procedure in the database that automatically 
+executes ('fires') when a specific event happens — like an 
+INSERT, UPDATE, or DELETE.
+
+When we say "audit log triggers at the DB level" it means the database 
+has built-in automatic mechanisms that:
+- Detect changes to important tables (like Customers, Transactions, 
+Wallets, etc.),
+- Automatically write details of the change into an audit table,
+- Without relying on the application layer.
+
+The audit log + trigger mechanism supports non-repudiation by:
+- Automatically recording every database change,
+- Storing who made the change and when,
+- Protecting the audit data from modification or deletion (e.g.,
+using append-only tables or write-once storage).
+
+EXAMPLE:
+
+CREATE TRIGGER log_wallet_changes
+AFTER UPDATE ON wallets
+FOR EACH ROW
+INSERT INTO wallet_audit_log (
+    wallet_id,
+    old_balance,
+    new_balance,
+    updated_by,
+    updated_at
+)
+VALUES (
+    OLD.id,
+    OLD.balance,
+    NEW.balance,
+    CURRENT_USER,
+    NOW()
+);

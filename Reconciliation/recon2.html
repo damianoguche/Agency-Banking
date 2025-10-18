@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Transaction Reconciliation — Exceptions</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #f9fafb;
+        margin: 0;
+        padding: 20px;
+      }
+      .container {
+        max-width: 1100px;
+        margin: 0 auto;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 20px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+      }
+      th,
+      td {
+        padding: 10px;
+        text-align: left;
+        border-top: 1px solid #ddd;
+      }
+      th {
+        background-color: #f0f0f0;
+      }
+      button {
+        border: none;
+        padding: 6px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        color: white;
+        font-size: 13px;
+      }
+      .retry {
+        background-color: #2563eb;
+      }
+      .reverse {
+        background-color: #dc2626;
+      }
+      #loading {
+        color: #555;
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Transaction Reconciliation — Exceptions</h1>
+
+      <div id="loading">Loading...</div>
+
+      <table id="exceptionsTable">
+        <thead>
+          <tr>
+            <th>Reference</th>
+            <th>Issues</th>
+            <th>Debit Sum</th>
+            <th>Credit Sum</th>
+            <th>Latest</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <script>
+      const tableBody = document.querySelector("#exceptionsTable tbody");
+      const loadingEl = document.getElementById("loading");
+
+      async function fetchList() {
+        loadingEl.style.display = "block";
+
+        // Simulating fetch call
+        // In production: const res = await fetch('/api/recon/exceptions');
+        // const data = await res.json();
+        const data = [
+          {
+            reference: "TXN-001",
+            issues: "Debit posted but credit missing",
+            debit_sum: 5000,
+            credit_sum: 0,
+            latest: "2025-10-12T08:45:00Z"
+          },
+          {
+            reference: "TXN-002",
+            issues: "Double debit detected",
+            debit_sum: 10000,
+            credit_sum: 5000,
+            latest: "2025-10-12T09:30:00Z"
+          },
+          {
+            reference: "TXN-003",
+            issues: "Credit posted late",
+            debit_sum: 2000,
+            credit_sum: 1000,
+            latest: "2025-10-12T10:00:00Z"
+          }
+        ];
+
+        populateTable(data);
+        loadingEl.style.display = "none";
+      }
+
+      function populateTable(items) {
+        tableBody.innerHTML = "";
+
+        items.forEach((it) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+          <td>${it.reference}</td>
+          <td>${it.issues}</td>
+          <td>${it.debit_sum}</td>
+          <td>${it.credit_sum}</td>
+          <td>${new Date(it.latest).toLocaleString()}</td>
+          <td>
+            <button class="retry" onclick="doRemediate('${
+              it.reference
+            }', 'RETRY_CREDIT')">Retry Credit</button>
+            <button class="reverse" onclick="doRemediate('${
+              it.reference
+            }', 'REVERSE_DEBIT')">Reverse Debit</button>
+          </td>
+        `;
+          tableBody.appendChild(row);
+        });
+      }
+
+      async function doRemediate(ref, action) {
+        alert(`Performing ${action} for reference ${ref}...`);
+        // In production:
+        // await fetch(`/api/recon/${ref}/remediate`, {
+        //   method: 'POST',
+        //   headers: { 'Content-Type': 'application/json' },
+        //   body: JSON.stringify({ action })
+        // });
+        await fetchList(); // reload the list
+      }
+
+      // On page load
+      fetchList();
+    </script>
+  </body>
+</html>

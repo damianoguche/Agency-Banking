@@ -1,0 +1,114 @@
+A production-ready Transaction Reconciliation System(TRS) design plus 
+working TypeScript/Node (Sequelize) script you can drop into your 
+stack. It will:
+
+- Detect unbalanced transactions (debit without matching credit / 
+reversal),
+- Flags duplicate legs or mismatched amounts,
+- Produce a daily report (CSV) and send an alert,
+- Optionally enqueue remediation jobs or mark transactions for 
+ manual review.
+
+Overview
+ - A short summary of the approach and detection rules.
+ - A SQL query to find unmatched references (for quick checks).
+ - A full TypeScript reconciliation script (Sequelize) with comments, 
+ which you can run as a daily cron job.
+
+Suggested remediation steps and operational notes (idempotency, 
+locking, alerts).
+
+Approach & detection rules (summary)
+ - Reconciliation focuses on each transaction reference (the UUID created 
+when you initiate a transfer). For each reference we expect a 
+canonical set of ledger rows:
+
+ - For a normal transfer: exactly one DEBIT entry and one CREDIT entry 
+with the same reference and same amount. Both status = SUCCESS.
+
+ - For a reversed/failed transaction: a REVERSAL entry (or explicit 
+ROLLEDBACK status).
+
+Any deviation is an exception to investigate.
+
+Detect these problems:
+ - Debit-only: DEBIT exists, CREDIT missing, no REVERSAL.
+ - Credit-only: CREDIT exists, DEBIT missing (possible inbound from 
+ external).
+ - Amount mismatch: both sides present but amounts differ.
+ - Duplicate legs: multiple DEBITs or multiple CREDITs with same 
+ reference.
+ - Pending/failed legs: one leg success, other leg FAILED or missing.
+ - Multiple references mapping: same business transfer accidentally 
+ split across refs.
+
+ How the script works (high level)
+ - detectExceptions() aggregates transactions by reference and finds 
+ mismatches or missing legs.
+ - investigateAndRemediate() loads transaction legs and applies 
+ automated remediation policy (enqueue credit retry when safe).
+ - generateCsvReport() writes a CSV for ops teams.
+ - endAlertEmail() emails ops with the CSV attached (uses nodemailer).
+
+ Deployment
+ - Add to your repo, run npm install csv-stringify nodemailer.
+ - Add a cron (systemd timer or cronjob) to run daily or hourly:
+
+ 0 1 * * * /usr/bin/node /srv/app/scripts/reconcileTransactions.js >> /var/log/recon.log 2>&1
+
+ - Or use a job runner (Kubernetes CronJob) for reliability.
+
+ Operational notes, recommended actions & safeguards
+
+Idempotency & Safety
+ - The remediation step must be idempotent — e.g., if you re-enqueue a 
+ credit, ensure the credit job checks the transaction reference and 
+ won’t post twice. Use reference as idempotency key.
+ - Use DB row locking or an atomic UPDATE ... WHERE status = 'PENDING' 
+ to prevent parallel remediation jobs from reprocessing the same 
+ reference.
+
+Outbox / SAGA
+ - For cross-system transfers, adopt Outbox pattern: write “credit 
+ instruction” into an outbox table in the same DB transaction as the 
+ debit. A separate reliably-run worker reads the outbox and posts to 
+ the downstream system. This guarantees no lost messages.
+
+Alerts and SLAs
+ - Alert on >0 exceptions immediately (ops), but also implement 
+ SLA-based escalations (e.g., if >10 unresolved exceptions 1 hour 
+ after detection escalate to on-call).
+ - Track MTTR (mean time to reconcile) as a KPI.
+
+Reconciliation frequency
+ - Real-time detection is ideal; otherwise run hourly for high-volume 
+ systems and daily for lower volume. For banking, at least hourly + 
+ end-of-day batch reconciliation is recommended.
+
+Audit trail
+ - Keep the generated CSV report and all transaction logs for audit 
+ (retention policy per regulation).
+
+Manual Operations
+ - Provide a UI for ops to inspect a reference, view legs, and choose 
+ to REPOST_CREDIT or REVERSE_DEBIT. Require dual-authorization for 
+ manual money movement in production.
+
+ Example remediation flow (automated + manual)
+1. Recon job finds REF-1 with DEBIT only.
+2. Attempt automatic remediation:
+ - If eligibility rules satisfied (age < 24 hours, single debit, 
+ single receiver, no previous retries), enqueue a RETRY_CREDIT job 
+ with idempotency key REF-1.
+ - Mark debit status to PENDING_RETRY.
+
+3. Worker processes RETRY_CREDIT:
+ - Verify debit still posted and no credit exists; then call 
+ downstream credit API.
+ - On success, create CREDIT transaction row and mark debit as SUCCESS.
+ - On failure, increment retry counter; after N attempts mark 
+ PENDING_MANUAL.
+
+4. Ops team reviews PENDING_MANUAL via portal and issues manual 
+reversal or manual credit. Document remediation with a REVERSAL 
+transaction row.

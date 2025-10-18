@@ -1,0 +1,47 @@
+How to wire this into your existing flow
+
+1. Invoke automatically from the integrity-verifier:
+- When verify-bvn-audit-hashes.js finds mismatches and writes CSV, call:
+
+const { spawn } = require("child_process");
+spawn("node", ["remediate-create-forensic-snapshot.js", "--csv", csvPath], { stdio: "inherit" });
+
+- Or run the remediation script from your monitoring automation when 
+mismatch CSV appears.
+
+2. Permissions:
+Use a DB user with SELECT only on bvn_audit_log and bvn_audit_archive.
+Use an AWS IAM principal for S3 upload with s3:PutObject, 
+s3:PutObjectRetention, s3:PutObjectLegalHold.
+
+3. Test flow:
+Run verifier; create intentional tamper; ensure verifier detects and 
+creates CSV; run remediation script; confirm S3 object lock and 
+email/Slack notifications.
+
+4. Retention & legal hold:
+You can set S3_RETENTION_DAYS and S3_OBJECT_LOCK_MODE as needed. For 
+true immutability for audit evidence, use Compliance mode and set an 
+appropriately long retention (e.g., 3650 days for 10 years) but follow 
+legal/regulatory retention policies.
+
+Operational & Security notes (must-read)
+Bucket object lock must be enabled at bucket creation time — plan this 
+change carefully and document it in change control.
+
+Immutable evidence should be stored in a dedicated bucket with strict 
+RBAC. Use MFA delete if your AWS account supports it.
+
+Access logs: enable S3 access logging and, if feasible, store logs in 
+a separate immutable bucket.
+
+Chain of custody: keep a change-approved ticket or automated record 
+that links the snapshot to the incident ID, operator, and date/time. 
+The script writes the manifest which helps, but also record the 
+snapshot in your incident system (JIRA/Ticketing) if required.
+
+Least privilege for all credentials. Prefer instance/role credentials 
+over static keys.
+
+WORM / Compliance: understand legal retention obligations before 
+setting an extremely long compliance retention period.

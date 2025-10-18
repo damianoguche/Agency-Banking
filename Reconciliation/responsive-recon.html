@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Transaction Reconciliation — Exceptions</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      :root {
+        --primary: #2563eb;
+        --danger: #dc2626;
+        --bg: #f9fafb;
+        --card: #ffffff;
+        --text: #111827;
+        --border: #e5e7eb;
+        --muted: #6b7280;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --primary: #3b82f6;
+          --danger: #f87171;
+          --bg: #111827;
+          --card: #1f2937;
+          --text: #f9fafb;
+          --border: #374151;
+          --muted: #9ca3af;
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Inter", Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        margin: 0;
+        padding: 16px;
+        transition: background 0.3s, color 0.3s;
+      }
+
+      .container {
+        max-width: 1100px;
+        margin: 0 auto;
+        background: var(--card);
+        padding: 24px;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        overflow-x: auto;
+        transition: background 0.3s;
+      }
+
+      h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 16px;
+        text-align: center;
+      }
+
+      #loading {
+        color: var(--muted);
+        font-weight: 600;
+        text-align: center;
+        margin-bottom: 12px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 8px;
+        min-width: 700px;
+      }
+
+      th,
+      td {
+        padding: 10px 12px;
+        text-align: left;
+        border-top: 1px solid var(--border);
+        word-wrap: break-word;
+      }
+
+      th {
+        background-color: var(--bg);
+        font-weight: 600;
+        font-size: 0.9rem;
+      }
+
+      td {
+        font-size: 0.9rem;
+      }
+
+      button {
+        border: none;
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        color: white;
+        font-size: 0.8rem;
+        transition: all 0.2s ease;
+      }
+
+      button.retry {
+        background-color: var(--primary);
+      }
+
+      button.reverse {
+        background-color: var(--danger);
+      }
+
+      button:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      /* Responsive design */
+      @media (max-width: 768px) {
+        .container {
+          padding: 16px;
+        }
+
+        table {
+          font-size: 0.85rem;
+          min-width: 100%;
+        }
+
+        th,
+        td {
+          padding: 8px;
+        }
+      }
+
+      /* Mobile stacked layout */
+      @media (max-width: 600px) {
+        table,
+        thead,
+        tbody,
+        th,
+        td,
+        tr {
+          display: block;
+        }
+
+        thead {
+          display: none;
+        }
+
+        tr {
+          border: 1px solid var(--border);
+          border-radius: 10px;
+          padding: 12px;
+          margin-bottom: 10px;
+          background: var(--card);
+          box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        td {
+          display: flex;
+          justify-content: space-between;
+          padding: 6px 0;
+          font-size: 0.85rem;
+        }
+
+        td::before {
+          content: attr(data-label);
+          font-weight: 600;
+          color: var(--muted);
+        }
+
+        .actions {
+          justify-content: flex-end;
+        }
+
+        button {
+          width: 48%;
+          font-size: 0.75rem;
+          padding: 8px;
+        }
+      }
+
+      /* Smooth fade-in animation */
+      tr {
+        animation: fadeIn 0.3s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(4px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Transaction Reconciliation — Exceptions</h1>
+
+      <div id="loading">Loading...</div>
+
+      <table id="exceptionsTable">
+        <thead>
+          <tr>
+            <th>Reference</th>
+            <th>Issues</th>
+            <th>Debit Sum</th>
+            <th>Credit Sum</th>
+            <th>Latest</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <script>
+      const tableBody = document.querySelector("#exceptionsTable tbody");
+      const loadingEl = document.getElementById("loading");
+
+      async function fetchList() {
+        loadingEl.style.display = "block";
+
+        // Simulate API call
+        const data = [
+          {
+            reference: "TXN-001",
+            issues: "Debit posted but credit missing",
+            debit_sum: 5000,
+            credit_sum: 0,
+            latest: "2025-10-12T08:45:00Z"
+          },
+          {
+            reference: "TXN-002",
+            issues: "Double debit detected",
+            debit_sum: 10000,
+            credit_sum: 5000,
+            latest: "2025-10-12T09:30:00Z"
+          },
+          {
+            reference: "TXN-003",
+            issues: "Credit posted late",
+            debit_sum: 2000,
+            credit_sum: 1000,
+            latest: "2025-10-12T10:00:00Z"
+          }
+        ];
+
+        populateTable(data);
+        loadingEl.style.display = "none";
+      }
+
+      function populateTable(items) {
+        tableBody.innerHTML = "";
+
+        items.forEach((it) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+          <td data-label="Reference">${it.reference}</td>
+          <td data-label="Issues">${it.issues}</td>
+          <td data-label="Debit Sum">${it.debit_sum.toLocaleString()}</td>
+          <td data-label="Credit Sum">${it.credit_sum.toLocaleString()}</td>
+          <td data-label="Latest">${new Date(it.latest).toLocaleString()}</td>
+          <td data-label="Actions" class="actions">
+            <button class="retry" onclick="doRemediate('${
+              it.reference
+            }', 'RETRY_CREDIT')">Retry Credit</button>
+            <button class="reverse" onclick="doRemediate('${
+              it.reference
+            }', 'REVERSE_DEBIT')">Revrse Debit</button>
+          </td>
+        `;
+          tableBody.appendChild(row);
+        });
+      }
+
+      async function doRemediate(ref, action) {
+        alert(`Performing ${action} for reference ${ref}...`);
+        await fetchList();
+      }
+
+      fetchList();
+    </script>
+  </body>
+</html>

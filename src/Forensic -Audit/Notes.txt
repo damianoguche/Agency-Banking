@@ -1,0 +1,26 @@
+a Forensic Integrity Verification Job (a reconciliation script).
+It will:
+
+Compute and verify hash integrity of every audit record.
+Detect tampering, deletions, or sequence gaps.
+Store immutable results (signed or hashed).
+
+Automatically alert Security & Audit teams if issues are found.
+
+1. Core Principle: Hash-Chain for Non-Repudiation
+We’ll extend each AuditLog record with:
+previousHash → the hash of the previous audit record
+recordHash → the hash of the current record’s content
+
+That creates a blockchain-like chain, so if any record is deleted or 
+altered, the chain breaks.
+
+Summary: End-to-End Forensic Readiness
+| Component               | Purpose                                                      |
+| ----------------------- | ------------------------------------------------------------ |
+| **AuditLog Table**      | Central immutable log                                        |
+| **Hooks / Triggers**    | Capture every DB change automatically                        |
+| **Hash + Chain**        | Detect tampering or deletions                                |
+| **Reconciliation Job**  | Verify daily integrity                                       |
+| **Security Alerts**     | Notify audit & security teams automatically                  |
+| **Immutable Retention** | Optional copy to AWS S3 (Object Lock) or append-only storage |

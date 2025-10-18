@@ -1,0 +1,20 @@
+Below is a production-ready Node.js remediation script that:
+
+1. Takes a CSV (mismatch report) or list of mismatched rows (you can call it from the verification script),
+2. Gathers the full, authoritative records from the DB (audit table and archive),
+3. Creates an immutable forensic snapshot bundle (CSV + JSON + compressed tar),
+4. Computes SHA-256 checksums for every file,
+5. Uploads the bundle to AWS S3 with Object Lock (Compliance or Governance mode) so it cannot be mutated or deleted,
+6. Optionally writes a local write-once copy (Linux chattr +i note),
+7. Notifies Security & Audit via Slack and email with the snapshot location and checksums
+8. Returns non-zero exit codes on any failure (good for automation).
+
+## Important pre-requisites (read first)
+
+If you plan to use S3 Object Lock, the target S3 bucket MUST be created with Object Lock enabled at bucket creation time. You cannot enable object lock after bucket creation. Use Compliance mode if you want strongest immutability.
+
+The IAM credentials used for upload must have s3:PutObject, s3:PutObjectRetention, and s3:PutObjectLegalHold (if using legal hold) permissions.
+
+Store secrets in a secrets manager or environment variables (example .env below). Do not commit .env to Git.
+
+If you want local immutability, the script will attempt chattr +i on Linux (requires root). Treat local write-once as an additional copy, not a replacement for S3 object lock.

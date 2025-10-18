@@ -1,0 +1,19 @@
+{
+  "name": "bvn-forensic-remediation",
+  "version": "1.0.0",
+  "main": "remediate-create-forensic-snapshot.js",
+  "scripts": {
+    "remediate": "node remediate-create-forensic-snapshot.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.XXX",
+    "archiver": "^5.3.1",
+    "csv-parse": "^5.3.0",
+    "csv-stringify": "^6.2.0",
+    "dotenv": "^16.0.0",
+    "minimist": "^1.2.8",
+    "mysql2": "^3.3.0",
+    "node-fetch": "^2.6.7",
+    "nodemailer": "^6.9.0"
+  }
+}

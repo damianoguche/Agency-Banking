@@ -1,0 +1,30 @@
+A Node.js + Sequelize-based audit logging system that provides the 
+same non-repudiation guarantees as the database trigger version — but 
+implemented entirely in the application layer, so it works even in 
+managed cloud databases (like AWS RDS, Azure SQL, or Cloud SQL) where 
+you may not have trigger privileges.
+
+
+Design Overview
+We’ll use Sequelize hooks (beforeCreate, beforeUpdate, beforeDestroy)
+to:
+ - Automatically capture data before and after changes
+ - Store these in a centralized AuditLog model
+ - Include metadata (who made the change, when, what changed)
+ - Add SHA-256 hashing for non-repudiation integrity
+
+ | Control                    | Description                                                                          |
+| -------------------------- | ------------------------------------------------------------------------------------ |
+| **Hash chaining**          | Each record’s hash includes the previous record’s hash — detects tampering sequence. |
+| **Digital signature**      | Sign logs with a private key if regulatory-grade non-repudiation is required.        |
+| **Write-once storage**     | Send copies to immutable storage (e.g., AWS S3 Object Lock or append-only table).    |
+| **Regular reconciliation** | Verify hash integrity daily or weekly to ensure no tampering.                        |
+
+Key Benefits
+| Feature               | Advantage                                         |
+| --------------------- | ------------------------------------------------- |
+| ORM-level enforcement | Works even without DB trigger privileges          |
+| JSON logging          | Stores full before/after snapshots                |
+| Tamper detection      | SHA-256 hash ensures no silent modification       |
+| Easy integration      | Add to any Sequelize model in minutes             |
+| Non-repudiation ready | Each user action traceable, signed, and immutable |

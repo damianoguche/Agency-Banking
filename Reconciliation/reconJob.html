@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Transaction Reconciliation — Exceptions</title>
+
+    <style>
+      /* ---------- GLOBAL ---------- */
+      :root {
+        --purple-light: #c084fc;
+        --purple-dark: #7c3aed;
+        --bg-gradient: linear-gradient(135deg, #a855f7, #6d28d9);
+        --bg-dark: #1f1f2e;
+        --text-light: #f9f9f9;
+        --text-dark: #1a1a1a;
+        --card-bg: #ffffffcc;
+        --card-bg-dark: #2b2b3b;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Inter", sans-serif;
+        background: #eceaea;
+        color: var(--text-dark);
+        transition: background 0.5s ease, color 0.3s ease;
+      }
+
+      body.dark-mode {
+        background: var(--bg-dark);
+        color: var(--text-light);
+      }
+
+      /* ---------- NAVBAR ---------- */
+      .navbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #6d28d9;
+        backdrop-filter: blur(10px);
+        padding: 1rem 2rem;
+        color: var(--text-light);
+      }
+
+      .navbar h1 {
+        font-size: 1.2rem;
+        font-weight: 700;
+      }
+
+      .toggle-btn {
+        background: var(--purple-dark);
+        color: white;
+        border: none;
+        border-radius: 20px;
+        padding: 0.4rem 1rem;
+        cursor: pointer;
+        font-weight: 500;
+        transition: background 0.3s ease;
+      }
+
+      .toggle-btn:hover {
+        background: var(--purple-light);
+      }
+
+      /* ---------- MAIN CONTAINER ---------- */
+      .container {
+        max-width: 1100px;
+        margin: 2rem auto;
+        background: var(--card-bg);
+        backdrop-filter: blur(10px);
+        padding: 2rem;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        transition: background 0.3s ease;
+      }
+
+      body.dark-mode .container {
+        background: var(--card-bg-dark);
+      }
+
+      h2 {
+        font-size: 1.6rem;
+        margin-bottom: 1rem;
+        font-weight: 700;
+        color: var(--purple-dark);
+      }
+
+      /* ---------- TABLE ---------- */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+      }
+
+      thead {
+        background: var(--purple-dark);
+        color: white;
+      }
+
+      th,
+      td {
+        text-align: left;
+        padding: 0.75rem;
+        border-bottom: 1px solid #ddd;
+      }
+
+      tr:hover {
+        background: rgba(124, 58, 237, 0.1);
+      }
+
+      /* ---------- BUTTONS ---------- */
+      button.action {
+        border: none;
+        border-radius: 6px;
+        padding: 0.4rem 0.8rem;
+        cursor: pointer;
+        font-weight: 600;
+        color: white;
+        transition: transform 0.2s ease;
+      }
+
+      button.action:hover {
+        transform: scale(1.05);
+      }
+
+      .retry {
+        background: #3b82f6;
+      }
+
+      .reverse {
+        background: #e9c008;
+      }
+
+      /* ---------- RESPONSIVENESS ---------- */
+      @media (max-width: 768px) {
+        table,
+        thead,
+        tbody,
+        th,
+        td,
+        tr {
+          display: block;
+        }
+
+        thead {
+          display: none;
+        }
+
+        tr {
+          background: rgba(255, 255, 255, 0.1);
+          margin-bottom: 1rem;
+          border-radius: 8px;
+          padding: 0.75rem;
+        }
+
+        td {
+          border: none;
+          display: flex;
+          justify-content: space-between;
+          padding: 0.5rem;
+        }
+
+        td::before {
+          content: attr(data-label);
+          font-weight: 600;
+          color: var(--purple-dark);
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- NAVBAR -->
+    <nav class="navbar">
+      <h1>Recon Dashboard</h1>
+      <button class="toggle-btn" id="themeToggle">🌙 Dark Mode</button>
+    </nav>
+
+    <!-- MAIN -->
+    <div class="container">
+      <h2>Transaction Reconciliation — Exceptions</h2>
+      <div id="loading" style="display: none">Loading...</div>
+
+      <table id="exceptionsTable">
+        <thead>
+          <tr>
+            <th>Reference</th>
+            <th>Issues</th>
+            <th>Debit Sum</th>
+            <th>Credit Sum</th>
+            <th>Latest</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <!-- SCRIPT -->
+    <script>
+      const tableBody = document.querySelector("#exceptionsTable tbody");
+      const loadingDiv = document.getElementById("loading");
+      const themeToggle = document.getElementById("themeToggle");
+
+      // Dummy data
+      const dummyData = [
+        {
+          reference: "TXN1001",
+          issues: "Credit mismatch",
+          debit_sum: 1000,
+          credit_sum: 900,
+          latest: "2025-10-12T08:30:00Z"
+        },
+        {
+          reference: "TXN1002",
+          issues: "Debit posted twice",
+          debit_sum: 2000,
+          credit_sum: 1000,
+          latest: "2025-10-12T09:45:00Z"
+        },
+        {
+          reference: "TXN1003",
+          issues: "Missing credit entry",
+          debit_sum: 500,
+          credit_sum: 0,
+          latest: "2025-10-12T10:00:00Z"
+        }
+      ];
+
+      async function fetchList() {
+        loadingDiv.style.display = "block";
+        await new Promise((r) => setTimeout(r, 1000)); // simulate delay
+        renderTable(dummyData);
+        loadingDiv.style.display = "none";
+      }
+
+      function renderTable(items) {
+        tableBody.innerHTML = "";
+        items.forEach((it) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+          <td data-label="Reference">${it.reference}</td>
+          <td data-label="Issues">${it.issues}</td>
+          <td data-label="Debit Sum">${it.debit_sum}</td>
+          <td data-label="Credit Sum">${it.credit_sum}</td>
+          <td data-label="Latest">${new Date(it.latest).toLocaleString()}</td>
+          <td data-label="Actions">
+            <button class="action retry" onclick="doRemediate('${
+              it.reference
+            }','RETRY_CREDIT')">Retry Credit</button>
+            <button class="action reverse" onclick="doRemediate('${
+              it.reference
+            }','REVERSE_DEBIT')">Revrs Debit</button>
+          </td>
+        `;
+          tableBody.appendChild(row);
+        });
+      }
+
+      async function doRemediate(ref, action) {
+        alert(`Action: ${action} on ${ref}`);
+        fetchList();
+      }
+
+      // Theme Toggle
+      themeToggle.addEventListener("click", () => {
+        document.body.classList.toggle("dark-mode");
+        const dark = document.body.classList.contains("dark-mode");
+        themeToggle.textContent = dark ? "☀️ Light Mode" : "🌙 Dark Mode";
+      });
+
+      // Init
+      fetchList();
+    </script>
+  </body>
+</html>

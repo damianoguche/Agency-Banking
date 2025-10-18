@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Transaction Reconciliation — Exceptions</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 24px;
+        max-width: 1200px;
+        margin: auto;
+        background: #f9fafb;
+      }
+      h1 {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 16px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+      th,
+      td {
+        padding: 12px;
+        text-align: left;
+      }
+      th {
+        background-color: #f3f4f6;
+      }
+      tr.border-top td {
+        border-top: 1px solid #e5e7eb;
+      }
+      button {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        color: white;
+      }
+      .btn-blue {
+        background-color: #2563eb;
+      }
+      .btn-red {
+        background-color: #dc2626;
+      }
+      .space-x-2 > *:not(:last-child) {
+        margin-right: 8px;
+      }
+      #loading {
+        margin-bottom: 10px;
+        font-weight: bold;
+        color: #555;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Transaction Reconciliation — Exceptions</h1>
+    <div id="loading">Loading...</div>
+
+    <table id="reconTable">
+      <thead>
+        <tr>
+          <th>Reference</th>
+          <th>Issues</th>
+          <th>Debit Sum</th>
+          <th>Credit Sum</th>
+          <th>Latest</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="reconBody">
+        <!-- Data will load here -->
+      </tbody>
+    </table>
+
+    <script>
+      const loadingEl = document.getElementById("loading");
+      const tableBody = document.getElementById("reconBody");
+
+      async function fetchList() {
+        loadingEl.style.display = "block";
+        tableBody.innerHTML = "";
+        try {
+          const res = await fetch("/api/recon/exceptions");
+          const json = await res.json();
+          renderTable(json);
+        } catch (err) {
+          console.error("Error fetching data:", err);
+          tableBody.innerHTML =
+            '<tr><td colspan="6">Failed to load data</td></tr>';
+        }
+        loadingEl.style.display = "none";
+      }
+
+      function renderTable(items) {
+        if (!items.length) {
+          tableBody.innerHTML =
+            '<tr><td colspan="6">No exceptions found</td></tr>';
+          return;
+        }
+
+        items.forEach((it) => {
+          const tr = document.createElement("tr");
+          tr.classList.add("border-top");
+          tr.innerHTML = `
+          <td>${it.reference}</td>
+          <td>${it.issues}</td>
+          <td>${it.debit_sum}</td>
+          <td>${it.credit_sum}</td>
+          <td>${new Date(it.latest).toLocaleString()}</td>
+          <td class="space-x-2">
+            <button class="btn-blue" onclick="doRemediate('${
+              it.reference
+            }','RETRY_CREDIT')">Retry Credit</button>
+            <button class="btn-red" onclick="doRemediate('${
+              it.reference
+            }','REVERSE_DEBIT')">Reverse Debit</button>
+          </td>
+        `;
+          tableBody.appendChild(tr);
+        });
+      }
+
+      async function doRemediate(ref, action) {
+        try {
+          await fetch(`/api/recon/${ref}/remediate`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action })
+          });
+          fetchList();
+        } catch (err) {
+          console.error("Remediation failed:", err);
+        }
+      }
+
+      // Initial load
+      fetchList();
+    </script>
+  </body>
+</html>
