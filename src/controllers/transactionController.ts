@@ -18,6 +18,8 @@ import { Type } from "../types/types.ts";
 import { LedgerEntry } from "../models/ledger.ts";
 import { withTxRetry } from "../util/retry.ts";
 import Outbox from "../models/outbox.ts";
+import { z } from "zod";
+import { getWalletTransactionsService } from "../services/getTransactions.ts";
 
 interface TransferRequestBody {
   senderWalletNumber: string;
@@ -337,19 +339,54 @@ export const transferFunds = async (
 };
 
 // Get all wallet transactions
+
+/**
+ * Input validation
+ * Correlation ID (for idempotency/traceability)
+ * Atomic boundary or consistency checks (ledger mismatch risk)
+ * Pagination + sorting
+ * Separation of service / controller (business logic leakage)
+ * Read consistency with ledger balance. Ledger consistency check
+ * (balance validation)
+ * Proper logging
+ */
+
+const querySchema = z.object({
+  page: z
+    .string()
+    .optional()
+    .transform((v) => parseInt(v || "1")),
+  limit: z
+    .string()
+    .optional()
+    .transform((v) => parseInt(v || "20"))
+});
+
 export const getWalletTransactions = async (req: Request, res: Response) => {
+  const idempotencyKey =
+    req.headers["x-idempotency-key"] || crypto.randomUUID();
+
   try {
     const { walletId } = req.params;
-    const transactions = await TransactionHistory.findAll({
-      where: { walletNumber: walletId },
-      order: [["created_at", "DESC"]]
+    const { page, limit } = querySchema.parse(req.query);
+
+    if (!walletId || walletId.trim() === "") {
+      return res.status(400).json({ message: "Invalid walletId" });
+    }
+
+    const result = await getWalletTransactionsService(walletId, page, limit);
+
+    res.status(200).json({
+      idempotencyKey,
+      wallet: {
+        walletNumber: result.wallet.walletNumber,
+        balance: result.wallet.balance
+      },
+      pagination: { page, limit },
+      transactions: result.transactions
     });
-
-    if (!transactions.length)
-      return res.status(404).json({ message: "No transactions found" });
-
-    res.status(200).json(transactions);
   } catch (err: any) {
-    res.status(500).json({ message: err.message });
+    console.error(`[${idempotencyKey}] Wallet Txn Error:`, err);
+    res.status(500).json({ idempotencyKey, message: err.message });
   }
 };
