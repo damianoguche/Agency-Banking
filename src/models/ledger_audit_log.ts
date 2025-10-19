@@ -9,6 +9,7 @@ export class LedgerAuditLog extends Model {
   declare difference: number;
   declare status: "inconsistent" | "consistent";
   declare created_at: Date;
+  declare updated_at: Date;
 }
 
 LedgerAuditLog.init(
@@ -41,6 +42,13 @@ LedgerAuditLog.init(
     created_at: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW
+    },
+
+    updated_at: {
+      // DB-level fallback
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW
     }
   },
   {
@@ -48,6 +56,7 @@ LedgerAuditLog.init(
     modelName: "LedgerAuditLog",
     tableName: "ledger_audit_log",
     timestamps: true,
-    createdAt: "created_at"
+    createdAt: "created_at",
+    updatedAt: "updated_at"
   }
 );

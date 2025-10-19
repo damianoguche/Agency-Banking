@@ -1,0 +1,8 @@
+1. Nightly ledger audit into a full Reconciliation & Remediation Workflow, similar to what banks and fintechs use internally (e.g. "exception management system").
+
+## OVERVIEW: The 3-Phase Workflow
+| Phase                                | Description                                                                       | Example Action                     |
+| ------------------------------------ | --------------------------------------------------------------------------------- | ---------------------------------- |
+| **1️⃣ Detection (Automated)**        | Nightly reconciliation finds inconsistencies and logs them in `ledger_audit_log`. | Done already                       |
+| **2️⃣ Review (Manual / Ops UI)**     | IT Risk or Ops reviews flagged wallets in a dashboard.                            | View mismatch, click *Recalculate* |
+| **3️⃣ Remediation (Controlled Fix)** | Recalculate from ledger, update wallet if confirmed by reviewer.                  | Fix balance, mark “resolved”       |

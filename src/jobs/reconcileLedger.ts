@@ -1,6 +1,6 @@
 /**
  * Runs one SQL aggregation for all wallets
- * Logs inconsistencies
+ * Logs inconsistencies in ledger_audit_log table
  * Sends alerts
  */
 import { QueryTypes, Transaction } from "sequelize";

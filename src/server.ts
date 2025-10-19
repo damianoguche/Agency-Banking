@@ -24,7 +24,7 @@ app.use("/transactions", transactionRoutes);
     await sequelize.authenticate();
     console.log("Connected to database!");
 
-    await sequelize.sync({ alter: true });
+    await sequelize.sync({ alter: false });
     console.log("Models synchronized!");
   } catch (err) {
     console.error("Database connection error:", err);

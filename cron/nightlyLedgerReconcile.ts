@@ -1,6 +1,8 @@
 /**
+ * --------A nightly ledger consistency job that:-------------
  * Runs every night at 02:00 AM
- * Logs inconsistencies into the DB
+ * Checks every wallet in one efficient query,
+ * Logs inconsistencies/mismatches into the DB(ledger_audit_log table)
  * Sends Slack/email alerts to IT Risk
  * 
  * 

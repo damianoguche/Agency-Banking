@@ -9,6 +9,8 @@ interface IdempotencyAttributes {
   path: string;
   response_code: number;
   response_body: any;
+  created_at: Date;
+  updated_at: Date;
 }
 
 // For creation, some fields (like timestamps) are optional
@@ -49,6 +51,18 @@ IdempotencyStore.init(
     response_body: {
       type: DataTypes.JSON,
       allowNull: false
+    },
+    created_at: {
+      //DB-leel fallback
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW
+    },
+    updated_at: {
+      // DB-level fallback
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW
     }
   },
   {
