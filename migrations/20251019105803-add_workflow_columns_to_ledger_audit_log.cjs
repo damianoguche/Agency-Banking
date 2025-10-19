@@ -25,5 +25,6 @@ module.exports = {
     await queryInterface.removeColumn("ledger_audit_log", "reviewed_by");
     await queryInterface.removeColumn("ledger_audit_log", "resolution_notes");
     await queryInterface.removeColumn("ledger_audit_log", "resolved_at");
+    await queryInterface.removeColumn("ledger_audit_log", "review_status");
   }
 };
