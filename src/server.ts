@@ -4,6 +4,7 @@ import express from "express";
 import sequelize from "./config/db.ts";
 import customerRoutes from "./routes/customerRoutes.ts";
 import transactionRoutes from "./routes/transactionRoutes.ts";
+import reconcileRoutes from "./routes/reconRoutes.ts";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -17,6 +18,7 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use("/customers", customerRoutes);
 app.use("/transactions", transactionRoutes);
+app.use("/reconcile", reconcileRoutes);
 
 // DB connection
 (async () => {
