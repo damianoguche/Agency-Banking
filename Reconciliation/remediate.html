@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ledger Inconsistencies Dashboard</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background-color: #f9fafb;
+      }
+      h2 {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 15px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+      th,
+      td {
+        border: 1px solid #e5e7eb;
+        padding: 10px;
+        text-align: left;
+      }
+      th {
+        background-color: #f3f4f6;
+      }
+      .text-red {
+        color: #dc2626;
+        font-weight: bold;
+      }
+      .text-green {
+        color: #16a34a;
+        font-weight: bold;
+      }
+      .btn {
+        background-color: #3b82f6;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+      .btn:hover {
+        background-color: #2563eb;
+      }
+      #loading {
+        font-style: italic;
+      }
+      .resolved {
+        background-color: #dcfce7 !important;
+        color: #166534 !important;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Ledger Inconsistencies</h2>
+    <div id="loading">Loading mock data...</div>
+
+    <table id="dataTable" style="display: none">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Wallet ID</th>
+          <th>Actual</th>
+          <th>Computed</th>
+          <th>Diff</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+
+    <script>
+      const loadingEl = document.getElementById("loading");
+      const table = document.getElementById("dataTable");
+      const tbody = document.getElementById("tableBody");
+
+      // --- MOCK DATA ---
+      let mockData = [
+        {
+          id: 1,
+          walletId: "WAL-001",
+          actualBalance: 5000,
+          computedBalance: 5200,
+          difference: -200,
+          status: "Unresolved"
+        },
+        {
+          id: 2,
+          walletId: "WAL-002",
+          actualBalance: 12000,
+          computedBalance: 11700,
+          difference: 300,
+          status: "Unresolved"
+        },
+        {
+          id: 3,
+          walletId: "WAL-003",
+          actualBalance: 7600,
+          computedBalance: 7600,
+          difference: 0,
+          status: "Resolved"
+        },
+        {
+          id: 4,
+          walletId: "WAL-004",
+          actualBalance: 2500,
+          computedBalance: 2800,
+          difference: -300,
+          status: "Unresolved"
+        },
+        {
+          id: 5,
+          walletId: "WAL-005",
+          actualBalance: 9990,
+          computedBalance: 10000,
+          difference: -10,
+          status: "Resolved"
+        }
+      ];
+
+      async function loadData() {
+        // simulate delay
+        loadingEl.style.display = "block";
+        table.style.display = "none";
+
+        setTimeout(() => {
+          renderTable(mockData);
+        }, 1000);
+      }
+
+      function handleFix(id) {
+        const item = mockData.find((r) => r.id === id);
+        if (item) {
+          item.status = "Resolved";
+          item.difference = 0;
+          alert(
+            `Wallet ${item.walletId} has been marked as resolved by ITRiskOps.`
+          );
+          renderTable(mockData);
+        }
+      }
+
+      function renderTable(records) {
+        tbody.innerHTML = "";
+        if (!records.length) {
+          loadingEl.textContent = "No inconsistencies found.";
+          return;
+        }
+        loadingEl.style.display = "none";
+        table.style.display = "table";
+
+        records.forEach((r) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+          <td>${r.id}</td>
+          <td>${r.walletId}</td>
+          <td>${r.actualBalance}</td>
+          <td>${r.computedBalance}</td>
+          <td class="${r.difference > 0 ? "text-red" : "text-green"}">${
+            r.difference
+          }</td>
+          <td>${r.status}</td>
+          <td>
+            ${
+              r.status === "Unresolved"
+                ? `<button class="btn" onclick="handleFix(${r.id})">Fix & Resolve</button>`
+                : `<button class="btn resolved" disabled>Resolved</button>`
+            }
+          </td>
+        `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      // Load mock data on page start
+      loadData();
+    </script>
+  </body>
+</html>

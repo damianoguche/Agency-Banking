@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ledger Inconsistencies Dashboard</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+      }
+      h2 {
+        font-size: 1.25rem;
+        font-weight: bold;
+        margin-bottom: 15px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        border: 1px solid #ccc;
+        padding: 8px;
+        text-align: left;
+      }
+      th {
+        background-color: #f5f5f5;
+      }
+      .text-red {
+        color: #e53e3e;
+      }
+      .text-green {
+        color: #16a34a;
+      }
+      .btn {
+        background-color: #3b82f6;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      .btn:hover {
+        background-color: #2563eb;
+      }
+      #loading {
+        font-style: italic;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Ledger Inconsistencies</h2>
+    <div id="loading">Loading...</div>
+    <table id="dataTable" style="display: none">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Wallet ID</th>
+          <th>Actual</th>
+          <th>Computed</th>
+          <th>Diff</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+
+    <script>
+      const loadingEl = document.getElementById("loading");
+      const table = document.getElementById("dataTable");
+      const tbody = document.getElementById("tableBody");
+
+      async function loadData() {
+        loadingEl.style.display = "block";
+        table.style.display = "none";
+        try {
+          const res = await fetch("/api/remediation/inconsistencies");
+          const data = await res.json();
+          renderTable(data);
+        } catch (err) {
+          loadingEl.textContent = "Failed to load data.";
+        }
+      }
+
+      async function handleFix(id) {
+        await fetch(`/api/remediation/${id}/fix`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reviewer: "ITRiskOps" })
+        });
+        loadData();
+      }
+
+      function renderTable(records) {
+        tbody.innerHTML = "";
+        if (!records.length) {
+          loadingEl.textContent = "No inconsistencies found.";
+          return;
+        }
+        loadingEl.style.display = "none";
+        table.style.display = "table";
+
+        records.forEach((r) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+          <td>${r.id}</td>
+          <td>${r.walletId}</td>
+          <td>${r.actualBalance}</td>
+          <td>${r.computedBalance}</td>
+          <td class="${r.difference > 0 ? "text-red" : "text-green"}">${
+            r.difference
+          }</td>
+          <td><button class="btn" onclick="handleFix(${
+            r.id
+          })">Fix & Resolve</button></td>
+        `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      // Load on page start
+      loadData();
+    </script>
+  </body>
+</html>

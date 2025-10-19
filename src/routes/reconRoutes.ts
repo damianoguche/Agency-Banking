@@ -3,7 +3,7 @@ import {
   fixWallet,
   getInconsistencies,
   recalBalance
-} from "../controllers/reconController";
+} from "../controllers/reconController.ts";
 
 const router = Router();
 

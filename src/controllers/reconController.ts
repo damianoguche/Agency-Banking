@@ -1,6 +1,9 @@
 import type { Request, Response } from "express";
-import { LedgerAuditLog } from "../models/ledger_audit_log";
-import { fixWalletBalance, recalcWalletBalance } from "../services/remediation";
+import { LedgerAuditLog } from "../models/ledger_audit_log.ts";
+import {
+  fixWalletBalance,
+  recalcWalletBalance
+} from "../services/remediation.ts";
 
 export const getInconsistencies = async (_: any, res: Response) => {
   const pending = await LedgerAuditLog.findAll({
