@@ -6,11 +6,12 @@ export default function AuditDashboard() {
   const [loading, setLoading] = useState(false);
 
   async function loadData() {
-    setLoading(false);
+    setLoading(true);
     const res = await axios.get(
       "http://localhost:3000/remediation/inconsistencies"
     );
     setRecords(res.data);
+    console.log(res.data);
     setLoading(false);
   }
 
@@ -34,36 +35,48 @@ export default function AuditDashboard() {
         <table className="min-w-full border">
           <thead>
             <tr className="bg-gray-100">
-              <th className="p-2 border">ID</th>
-              <th className="p-2 border">Wallet ID</th>
-              <th className="p-2 border">Actual</th>
-              <th className="p-2 border">Computed</th>
-              <th className="p-2 border">Diff</th>
-              <th className="p-2 border">Status</th>
-              <th className="p-2 border">Action</th>
+              <th className="p-2 border border-gray-300">ID</th>
+              <th className="p-2 border border-gray-300">Wallet ID</th>
+              <th className="p-2 border border-gray-300">Actual</th>
+              <th className="p-2 border border-gray-300">Computed</th>
+              <th className="p-2 border border-gray-300">Diff</th>
+              <th className="p-2 border border-gray-300">Status</th>
+              <th className="p-2 border border-gray-300">Action</th>
             </tr>
           </thead>
           <tbody>
             {records.map((r) => (
-              <tr key={r.id} className="border-b">
-                <td>{r.id}</td>
-                <td>{r.walletId}</td>
-                <td>{r.actualBalance}</td>
-                <td>{r.computedBalance}</td>
+              <tr key={r.id} className="border border-gray-200">
+                <td className="text-center">{r.id}</td>
+                <td className="text-center">{r.walletId}</td>
+                <td className="text-center">{r.actual_balance}</td>
+                <td className="text-center">{r.computed_balance}</td>
                 <td
                   className={
-                    r.difference > 0 ? "text-red-600" : "text-green-600"
+                    r.difference > 0
+                      ? "text-red-600 text-center"
+                      : "text-green-600 text-center"
                   }
                 >
                   {r.difference}
                 </td>
-                <td>
-                  <button
-                    onClick={() => handleFix(r.id)}
-                    className="bg-blue-500 text-white px-3 py-1 rounded"
-                  >
-                    Fix & Resolve
-                  </button>
+                <td className="text-center">{r.status}</td>
+                <td className="p-1 text-center">
+                  {r.status === "inconsistent" ? (
+                    <button
+                      onClick={() => handleFix(r.id)}
+                      className="bg-blue-500 text-white rounded cursor-pointer px-3 py-1 w-30"
+                    >
+                      Fix & Resolve
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleFix(r.id)}
+                      className="bg-blue-500 text-white rounded cursor-pointer resolved px-3 py-1 w-30"
+                    >
+                      Resolved
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}

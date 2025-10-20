@@ -75,7 +75,9 @@
         loadingEl.style.display = "block";
         table.style.display = "none";
         try {
-          const res = await fetch("/api/remediation/inconsistencies");
+          const res = await fetch(
+            "http://localhost:3000/remediation/inconsistencies"
+          );
           const data = await res.json();
           renderTable(data);
         } catch (err) {
@@ -84,7 +86,7 @@
       }
 
       async function handleFix(id) {
-        await fetch(`/api/remediation/${id}/fix`, {
+        await fetch(`http://localhost:3000/remediation/${id}/fix`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ reviewer: "ITRiskOps" })
@@ -106,8 +108,8 @@
           tr.innerHTML = `
           <td>${r.id}</td>
           <td>${r.walletId}</td>
-          <td>${r.actualBalance}</td>
-          <td>${r.computedBalance}</td>
+          <td>${r.actual_balance}</td>
+          <td>${r.computed_balance}</td>
           <td class="${r.difference > 0 ? "text-red" : "text-green"}">${
             r.difference
           }</td>
