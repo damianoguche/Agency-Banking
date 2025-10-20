@@ -50,8 +50,8 @@ export async function reconcileAllWallets() {
         await LedgerAuditLog.create(
           {
             walletId: inc.walletId,
-            computedBalance: inc.computed_balance,
-            actualBalance: inc.actual_balance,
+            computed_balance: inc.computed_balance,
+            actual_balance: inc.actual_balance,
             difference,
             status: "inconsistent"
           },

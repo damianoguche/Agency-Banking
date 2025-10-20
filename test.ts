@@ -1,6 +1,8 @@
 import { Customer } from "./src/models/customer.ts";
 import Wallet from "./src/models/wallet.ts";
 
+// node --loader ts-node/esm
+
 const customer = await Customer.findByPk(17, { include: ["wallets"] });
 const result = customer!.wallets
   ?.map((wallet) => wallet.toJSON())

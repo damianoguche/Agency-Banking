@@ -1,87 +1,149 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 
+// Define a clear interface
+interface AuditRecord {
+  id: number;
+  walletId: number;
+  actual_balance: number;
+  computed_balance: number;
+  difference: number;
+  status: "consistent" | "inconsistent";
+}
+
+// Create an Axios instance (best practice)
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:3000",
+  headers: {
+    "Content-Type": "application/json"
+  }
+});
+
 export default function AuditDashboard() {
-  const [records, setRecords] = useState<any[]>([]);
+  const [records, setRecords] = useState<AuditRecord[]>([]);
   const [loading, setLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  async function loadData() {
+  // Fetch data
+  const loadData = useCallback(async () => {
     setLoading(true);
-    const res = await axios.get(
-      "http://localhost:3000/remediation/inconsistencies"
-    );
-    setRecords(res.data);
-    console.log(res.data);
-    setLoading(false);
-  }
-
-  async function handleFix(id: number) {
-    await axios.post(`http://localhost:3000/remediation/${id}/fix`, {
-      reviewer: "ITRiskOps"
-    });
-    loadData();
-  }
-
-  useEffect(() => {
-    loadData();
+    setError(null);
+    try {
+      const res = await api.get("/remediation/inconsistencies");
+      setRecords(res.data);
+    } catch (err: any) {
+      setError("Failed to load data. Please try again.");
+      console.error("Error loading data:", err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
+  // Handle fix
+  const handleFix = async (id: number) => {
+    console.log(id);
+    setActionLoading(id);
+    try {
+      await api.post(`/remediation/${id}/fix`, { reviewer: "ITRiskOps" });
+      await loadData();
+    } catch (err: any) {
+      console.error("Error fixing record:", err);
+      alert("Failed to fix record. Please retry.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Run on mount
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // UI
   return (
-    <div className="p-4">
-      <h2 className="text-xl font-bold mb-3">Ledger Inconsistencies</h2>
+    <div className="p-6">
+      <h2 className="text-2xl font-semibold mb-4 text-gray-800">
+        Ledger Inconsistencies
+      </h2>
+
       {loading ? (
-        <p>Loading...</p>
+        <p className="text-gray-500">Loading...</p>
+      ) : error ? (
+        <p className="text-red-600">{error}</p>
+      ) : records.length === 0 ? (
+        <p className="text-gray-500">No inconsistencies found 🎉</p>
       ) : (
-        <table className="min-w-full border">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="p-2 border border-gray-300">ID</th>
-              <th className="p-2 border border-gray-300">Wallet ID</th>
-              <th className="p-2 border border-gray-300">Actual</th>
-              <th className="p-2 border border-gray-300">Computed</th>
-              <th className="p-2 border border-gray-300">Diff</th>
-              <th className="p-2 border border-gray-300">Status</th>
-              <th className="p-2 border border-gray-300">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {records.map((r) => (
-              <tr key={r.id} className="border border-gray-200">
-                <td className="text-center">{r.id}</td>
-                <td className="text-center">{r.walletId}</td>
-                <td className="text-center">{r.actual_balance}</td>
-                <td className="text-center">{r.computed_balance}</td>
-                <td
-                  className={
-                    r.difference > 0
-                      ? "text-red-600 text-center"
-                      : "text-green-600 text-center"
-                  }
-                >
-                  {r.difference}
-                </td>
-                <td className="text-center">{r.status}</td>
-                <td className="p-1 text-center">
-                  {r.status === "inconsistent" ? (
-                    <button
-                      onClick={() => handleFix(r.id)}
-                      className="bg-blue-500 text-white rounded cursor-pointer px-3 py-1 w-30"
-                    >
-                      Fix & Resolve
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => handleFix(r.id)}
-                      className="bg-blue-500 text-white rounded cursor-pointer resolved px-3 py-1 w-30"
-                    >
-                      Resolved
-                    </button>
-                  )}
-                </td>
+        <div className="overflow-x-auto rounded-lg shadow">
+          <table className="min-w-full border border-gray-200 text-sm text-gray-700">
+            <thead className="bg-gray-100 text-gray-800">
+              <tr>
+                {[
+                  "ID",
+                  "Wallet",
+                  "Actual",
+                  "Computed",
+                  "Diff",
+                  "Status",
+                  "Action"
+                ].map((h) => (
+                  <th
+                    key={h}
+                    className="p-2 border border-gray-200 font-semibold"
+                  >
+                    {h}
+                  </th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {records.map((r) => (
+                <tr
+                  key={r.id}
+                  className="border border-gray-200 hover:bg-gray-50"
+                >
+                  <td className="text-center p-2">{r.id}</td>
+                  <td className="text-center p-2">{r.walletId}</td>
+                  <td className="text-center p-2">{r.actual_balance}</td>
+                  <td className="text-center p-2">{r.computed_balance}</td>
+                  <td
+                    className={`text-center p-2 font-medium ${
+                      r.difference !== 0 ? "text-red-600" : "text-green-600"
+                    }`}
+                  >
+                    {Number(r.difference || 0).toFixed(2)}
+                  </td>
+                  <td
+                    className={`text-center p-2 capitalize ${
+                      r.status === "inconsistent"
+                        ? "text-red-600"
+                        : "text-green-700"
+                    }`}
+                  >
+                    {r.status}
+                  </td>
+                  <td className="text-center p-2">
+                    <button
+                      disabled={actionLoading === r.id}
+                      onClick={() => handleFix(r.walletId)}
+                      className={`px-3 py-1 rounded-md text-white text-sm transition-colors w-28 ${
+                        r.status === "inconsistent"
+                          ? "bg-blue-500 hover:bg-blue-600 cursor-pointer"
+                          : "bg-green-400 cursor-not-allowed"
+                      } ${actionLoading === r.id ? "opacity-60" : ""}`}
+                    >
+                      {actionLoading === r.id
+                        ? "Processing..."
+                        : r.status === "inconsistent"
+                        ? "Fix & Resolve"
+                        : "Resolved"}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

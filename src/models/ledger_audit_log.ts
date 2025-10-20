@@ -8,6 +8,10 @@ export class LedgerAuditLog extends Model {
   declare actual_balance: number;
   declare difference: number;
   declare status: "inconsistent" | "consistent";
+  declare review_status: "pending" | "under_review" | "resolved";
+  declare reviewed_by: string | null;
+  declare resolution_notes: string | null;
+  declare resolved_at: Date | null;
   declare created_at: Date;
   declare updated_at: Date;
 }
@@ -20,7 +24,7 @@ LedgerAuditLog.init(
       primaryKey: true
     },
     walletId: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.BIGINT,
       allowNull: false
     },
     computed_balance: {
@@ -38,6 +42,22 @@ LedgerAuditLog.init(
     status: {
       type: DataTypes.ENUM("consistent", "inconsistent"),
       defaultValue: "inconsistent"
+    },
+    review_status: {
+      type: DataTypes.ENUM("pending", "under_review", "resolved"),
+      defaultValue: "pending"
+    },
+    reviewed_by: {
+      type: DataTypes.STRING(255),
+      allowNull: true
+    },
+    resolution_notes: {
+      type: DataTypes.TEXT,
+      allowNull: true
+    },
+    resolved_at: {
+      type: DataTypes.DATE,
+      allowNull: true
     },
     created_at: {
       type: DataTypes.DATE,
