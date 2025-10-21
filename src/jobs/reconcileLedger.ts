@@ -22,14 +22,20 @@ export async function reconcileAllWallets() {
       console.log("Starting ledger reconciliation job...");
 
       const query = `
-        SELECT 
-          le.walletId,
-          SUM(CASE WHEN le.entry_type = 'credit' THEN le.amount ELSE -le.amount END) AS computed_balance,
-          w.balance AS actual_balance
-        FROM ledger_entries le
-        JOIN wallets w ON le.walletId = w.id
-        GROUP BY le.walletId, w.balance
-        HAVING computed_balance <> w.balance;
+       SELECT w.walletNumber AS walletId,
+       COALESCE(SUM(CASE WHEN le.entry_type = 'CREDIT' THEN le.amount ELSE -le.amount END), 0) AS computed_balance,
+            w.balance AS actual_balance,
+       (COALESCE(SUM(CASE WHEN le.entry_type = 'CREDIT' THEN le.amount ELSE -le.amount END), 0) - w.balance) AS difference,
+       CASE 
+       WHEN (COALESCE(SUM(CASE WHEN le.entry_type = 'CREDIT' THEN le.amount ELSE -le.amount END), 0) - w.balance) = 0 
+       THEN 'consistent'
+       ELSE 'inconsistent'
+       END AS status,
+       NOW() AS generated_at
+       FROM wallets w
+       LEFT JOIN ledger_entries le ON w.walletNumber = le.wallet_number
+       GROUP BY w.walletNumber
+       HAVING difference <> 0;
       `;
 
       const inconsistencies = (await sequelize.query(query, {
@@ -63,8 +69,10 @@ export async function reconcileAllWallets() {
       await sendLedgerAlert(inconsistencies);
 
       console.log(
-        `Ledger inconsistencies found: ${inconsistencies.length} wallets logged.`
+        `${inconsistencies.length} ledger inconsistencies found and logged.`
       );
     }
   );
 }
+
+reconcileAllWallets();

@@ -9,6 +9,7 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "seed": "node --loader ts-node/esm ./customer_wallet_seed.ts",
+     "recon": "node --loader ts-node/esm ./src/jobs/reconcileLedger.ts",
     "reconcile": "node --loader ts-node/esm ./src/scripts/reconcile.ts"
   },
   "keywords": [],
