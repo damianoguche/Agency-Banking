@@ -368,6 +368,7 @@ export const getWalletTransactions = async (req: Request, res: Response) => {
 
   try {
     const { walletId } = req.params;
+    console.log(walletId);
     const { page, limit } = querySchema.parse(req.query);
 
     if (!walletId || walletId.trim() === "") {
@@ -386,7 +387,7 @@ export const getWalletTransactions = async (req: Request, res: Response) => {
       transactions: result.transactions
     });
   } catch (err: any) {
-    console.error(`[${idempotencyKey}] Wallet Txn Error:`, err);
+    console.error(`[${idempotencyKey}] Wallet Txn Error:`, err.message);
     res.status(500).json({ idempotencyKey, message: err.message });
   }
 };

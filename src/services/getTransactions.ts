@@ -34,19 +34,36 @@ export async function getWalletTransactionsService(
         transaction: t
       });
 
+      // Check leedger existence
+      const entryCount = await LedgerEntry.count({
+        where: { wallet_number: walletNumber },
+        transaction: t
+      });
+
+      if (entryCount === 0) {
+        console.warn(`No ledger entries found for wallet ${walletNumber}`);
+
+        return {
+          wallet,
+          transactions
+        };
+      }
+
       // Ledger Consistency Check(Sum-by-type logic)
       const totalCredits = await LedgerEntry.sum("amount", {
-        where: { wallet_number: walletNumber, entry_type: "credit" },
+        where: { wallet_number: walletNumber, entry_type: "CREDIT" },
         transaction: t
       });
 
       const totalDebits = await LedgerEntry.sum("amount", {
-        where: { wallet_number: walletNumber, entry_type: "debit" },
+        where: { wallet_number: walletNumber, entry_type: "DEBIT" },
         transaction: t
       });
 
+      console.log(totalCredits, totalDebits);
+
       // Balance validation wallet.balance VS SUM(ledger_entry)
-      const computedBalance = (totalCredits || 0) - (totalDebits || 0);
+      const computedBalance = totalCredits - totalDebits;
       if (computedBalance !== wallet.balance) {
         throw new Error("Ledger mismatch/inconsistency detected");
       }

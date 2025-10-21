@@ -74,5 +74,3 @@ export async function reconcileAllWallets() {
     }
   );
 }
-
-reconcileAllWallets();
