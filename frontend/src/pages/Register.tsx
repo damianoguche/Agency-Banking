@@ -1,7 +1,10 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import toast from "react-hot-toast";
+import { motion, AnimatePresence } from "framer-motion";
+import { Eye, EyeOff } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 
@@ -28,6 +31,9 @@ const schema = yup.object({
 });
 
 export default function RegisterPage() {
+  const [showPassword, setShowPassword] = useState(false);
+  const [shake, setShake] = useState(false);
+
   const {
     register,
     handleSubmit,
@@ -35,6 +41,7 @@ export default function RegisterPage() {
   } = useForm<RegisterInputs>({
     resolver: yupResolver(schema)
   });
+
   const { register: registerUser } = useAuth();
   const navigate = useNavigate();
 
@@ -45,89 +52,177 @@ export default function RegisterPage() {
       navigate("/dashboard");
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Registration failed");
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100 pt-20 pb-10">
-      <div className="w-full max-w-md rounded-xl bg-white p-8 shadow border border-purple-500">
-        <h1 className="mb-6 text-center text-2xl font-semibold text-gray-800">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800 pt-20 pb-10 transition-colors duration-500">
+      <motion.div
+        key="registerForm"
+        initial={{ opacity: 0, y: 40 }}
+        animate={{
+          opacity: 1,
+          y: 0,
+          x: shake ? [0, -10, 10, -10, 10, 0] : 0
+        }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className="w-full max-w-md rounded-2xl bg-white dark:bg-gray-900 p-8 shadow-lg dark:shadow-gray-700/30 transition-colors duration-300"
+      >
+        <h1 className="mb-6 text-center text-3xl font-bold text-gray-800 dark:text-gray-100">
           Create Account
         </h1>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="mb-6">
-            <label className="block text-sm font-medium">Full Name</label>
-            <input
-              outline-none
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          {/* FULL NAME */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Full Name
+            </label>
+            <motion.input
               type="text"
               {...register("name")}
-              className="mt-1 w-full outline-none  rounded-md border border-purple-300 p-2 focus:border-purple-500 focus:ring-blue-500"
+              className={`mt-1 outline-none w-full rounded-md border p-2 bg-transparent transition-all duration-200 
+                ${
+                  errors.name
+                    ? "border-red-500 focus:ring-red-400"
+                    : "border-purple-300 dark:border-purple-700 focus:border-purple-500 focus:ring-purple-500"
+                }`}
+              whileFocus={{ scale: 1.02 }}
             />
-            {errors.name && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.name.message || ""}
-              </p>
-            )}
+            <AnimatePresence>
+              {errors.name && (
+                <motion.p
+                  className="mt-1 text-sm text-red-600 dark:text-red-400"
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                >
+                  {errors.name.message}
+                </motion.p>
+              )}
+            </AnimatePresence>
           </div>
 
+          {/* PHONE */}
           <div>
-            <label className="block text-sm font-medium">Phone Number</label>
-            <input
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Phone Number
+            </label>
+            <motion.input
               type="text"
               {...register("phone")}
-              className="mt-1 w-full outline-none rounded-md border border-purple-300 p-2 focus:border-purple-500 focus:ring-blue-500"
+              className={`mt-1 outline-none w-full rounded-md border p-2 bg-transparent transition-all duration-200 
+                ${
+                  errors.phone
+                    ? "border-red-500 focus:ring-red-400"
+                    : "border-purple-300 dark:border-purple-700 focus:border-purple-500 focus:ring-purple-500"
+                }`}
+              whileFocus={{ scale: 1.02 }}
             />
-            {errors.phone && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.phone?.message || ""}
-              </p>
-            )}
+            <AnimatePresence>
+              {errors.phone && (
+                <motion.p
+                  className="mt-1 text-sm text-red-600 dark:text-red-400"
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                >
+                  {errors.phone.message}
+                </motion.p>
+              )}
+            </AnimatePresence>
           </div>
 
+          {/* EMAIL */}
           <div>
-            <label className="block text-sm font-medium">Email</label>
-            <input
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Email
+            </label>
+            <motion.input
               type="email"
               {...register("email")}
-              className="mt-1 w-full outline-none rounded-md border border-purple-300 p-2 focus:border-purple-500 focus:ring-blue-500"
+              className={`mt-1 outline-none w-full rounded-md border p-2 bg-transparent transition-all duration-200 
+                ${
+                  errors.email
+                    ? "border-red-500 focus:ring-red-400"
+                    : "border-purple-300 dark:border-purple-700 focus:border-purple-500 focus:ring-purple-500"
+                }`}
+              whileFocus={{ scale: 1.02 }}
             />
-            {errors.email && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.email.message || ""}
-              </p>
-            )}
+            <AnimatePresence>
+              {errors.email && (
+                <motion.p
+                  className="mt-1 text-sm text-red-600 dark:text-red-400"
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                >
+                  {errors.email.message}
+                </motion.p>
+              )}
+            </AnimatePresence>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium">Password</label>
-            <input
-              type="password"
+          {/* PASSWORD */}
+          <div className="relative">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Password
+            </label>
+            <motion.input
+              type={showPassword ? "text" : "password"}
               {...register("password")}
-              className="mt-1 w-full outline-none rounded-md border border-purple-300 p-2 focus:border-purple-500 focus:ring-blue-500"
+              className={`mt-1 outline-none w-full rounded-md border p-2 pr-10 bg-transparent transition-all duration-200 
+                ${
+                  errors.password
+                    ? "border-red-500 focus:ring-red-400"
+                    : "border-purple-300 dark:border-purple-700 focus:border-purple-500 focus:ring-purple-500"
+                }`}
+              whileFocus={{ scale: 1.02 }}
             />
-            {errors.password && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.password.message || ""}
-              </p>
-            )}
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute right-3 top-8 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+            <AnimatePresence>
+              {errors.password && (
+                <motion.p
+                  className="mt-1 text-sm text-red-600 dark:text-red-400"
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                >
+                  {errors.password.message}
+                </motion.p>
+              )}
+            </AnimatePresence>
           </div>
 
-          <button
+          {/* SUBMIT BUTTON */}
+          <motion.button
             type="submit"
             disabled={isSubmitting}
-            className="w-full rounded-md bg-purple-600 p-2 text-white hover:bg-purple-700 disabled:opacity-60 cursor-pointer"
+            whileTap={{ scale: 0.98 }}
+            className="w-full rounded-md bg-purple-600 py-2 text-white font-medium shadow hover:bg-purple-700 transition-colors duration-200 disabled:opacity-60 dark:bg-purple-500 dark:hover:bg-purple-600"
           >
-            {isSubmitting ? "Creating account..." : "Register"}
-          </button>
+            {isSubmitting ? "Creating Account..." : "Register"}
+          </motion.button>
         </form>
 
-        <p className="mt-4 text-center text-sm text-gray-600">
+        <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
           Already have an account?{" "}
-          <Link to="/login" className="text-purple-600 hover:underline">
+          <Link
+            to="/login"
+            className="text-purple-600 dark:text-purple-400 hover:underline"
+          >
             Sign In
           </Link>
         </p>
-      </div>
+      </motion.div>
     </div>
   );
 }
