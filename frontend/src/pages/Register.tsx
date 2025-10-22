@@ -68,9 +68,9 @@ export default function RegisterPage() {
           x: shake ? [0, -10, 10, -10, 10, 0] : 0
         }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="w-full max-w-md rounded-2xl bg-white dark:bg-gray-900 p-8 shadow-lg dark:shadow-gray-700/30 transition-colors duration-300"
+        className="w-full border border-purple-500 max-w-md rounded-2xl bg-white dark:bg-gray-900 p-8 shadow-lg dark:shadow-gray-700/30 transition-colors duration-300"
       >
-        <h1 className="mb-6 text-center text-3xl font-bold text-gray-800 dark:text-gray-100">
+        <h1 className="mb-6 text-center text-3xl font-bold text-purple-800 dark:text-gray-100">
           Create Account
         </h1>
 
@@ -207,7 +207,7 @@ export default function RegisterPage() {
             type="submit"
             disabled={isSubmitting}
             whileTap={{ scale: 0.98 }}
-            className="w-full rounded-md bg-purple-600 py-2 text-white font-medium shadow hover:bg-purple-700 transition-colors duration-200 disabled:opacity-60 dark:bg-purple-500 dark:hover:bg-purple-600"
+            className="w-full rounded-md bg-purple-600 py-2 text-white font-medium shadow hover:bg-purple-700 transition-colors duration-200 disabled:opacity-60 dark:bg-purple-500 dark:hover:bg-purple-600 cursor-pointer"
           >
             {isSubmitting ? "Creating Account..." : "Register"}
           </motion.button>
