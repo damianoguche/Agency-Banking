@@ -38,7 +38,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex h-screen items-center justify-center bg-gray-100">
-      <div className="w-full max-w-md rounded-xl bg-white p-8 shadow">
+      <div className="w-full max-w-md rounded-xl bg-white p-8 shadow border border-purple-500">
         <h1 className="mb-6 text-center text-2xl font-semibold text-gray-800">
           Sign In
         </h1>
@@ -48,7 +48,7 @@ export default function LoginPage() {
             <input
               type="email"
               {...register("email")}
-              className="mt-1 w-full rounded-md border border-gray-300 p-2 focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 w-full outline-none rounded-md border border-purple-300 p-2 focus:border-purple-500 focus:ring-purple-500"
             />
             {errors.email && (
               <p className="mt-1 text-sm text-red-600">
@@ -62,7 +62,7 @@ export default function LoginPage() {
             <input
               type="password"
               {...register("password")}
-              className="mt-1 w-full rounded-md border border-gray-300 p-2 focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 w-full rounded-md outline-none border border-purple-300 p-2 focus:border-purple-500 focus:ring-purple-500"
             />
             {errors.password && (
               <p className="mt-1 text-sm text-red-600">
@@ -74,14 +74,14 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full rounded-md bg-blue-600 p-2 text-white hover:bg-blue-700 disabled:opacity-60"
+            className="w-full rounded-md bg-purple-600 p-2 text-white hover:bg-purple-700 disabled:opacity-60 cursor-pointer"
           >
             {isSubmitting ? "Signing in..." : "Sign In"}
           </button>
         </form>
         <p className="mt-4 text-center text-sm text-gray-600">
-          Don’t have an account?{" "}
-          <Link to="/register" className="text-blue-600 hover:underline">
+          Don't have an account?{" "}
+          <Link to="/register" className="text-purple-600 hover:underline">
             Register
           </Link>
         </p>

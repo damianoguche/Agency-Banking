@@ -5,8 +5,11 @@ import toast from "react-hot-toast";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 
+const phoneRegExp = /^(\+?\d{1,4}[\s-]?)?(\(?\d{3}\)?[\s-]?)?\d{3}[\s-]?\d{4}$/;
+
 interface RegisterInputs {
   name: string;
+  phone: string;
   email: string;
   password: string;
 }
@@ -14,6 +17,10 @@ interface RegisterInputs {
 const schema = yup.object({
   name: yup.string().required("Full name is required"),
   email: yup.string().email("Invalid email").required("Email is required"),
+  phone: yup
+    .string()
+    .matches(phoneRegExp, "Invalid phone number")
+    .required("Phone number is required"),
   password: yup
     .string()
     .min(6, "Minimum 6 characters")
@@ -33,7 +40,7 @@ export default function RegisterPage() {
 
   const onSubmit = async (data: RegisterInputs) => {
     try {
-      await registerUser(data.name, data.email, data.password);
+      await registerUser(data.name, data.phone, data.email, data.password);
       toast.success("Account created successfully!");
       navigate("/dashboard");
     } catch (err: any) {
@@ -42,21 +49,38 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex h-screen items-center justify-center bg-gray-100">
-      <div className="w-full max-w-md rounded-xl bg-white p-8 shadow">
+    <div className="flex min-h-screen items-center justify-center bg-gray-100 pt-20 pb-10">
+      <div className="w-full max-w-md rounded-xl bg-white p-8 shadow border border-purple-500">
         <h1 className="mb-6 text-center text-2xl font-semibold text-gray-800">
           Create Account
         </h1>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-          <div>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="mb-6">
             <label className="block text-sm font-medium">Full Name</label>
             <input
+              outline-none
               type="text"
               {...register("name")}
-              className="mt-1 w-full rounded-md border border-gray-300 p-2 focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 w-full outline-none  rounded-md border border-purple-300 p-2 focus:border-purple-500 focus:ring-blue-500"
             />
             {errors.name && (
-              <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+              <p className="mt-1 text-sm text-red-600">
+                {errors.name.message || ""}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium">Phone Number</label>
+            <input
+              type="text"
+              {...register("phone")}
+              className="mt-1 w-full outline-none rounded-md border border-purple-300 p-2 focus:border-purple-500 focus:ring-blue-500"
+            />
+            {errors.phone && (
+              <p className="mt-1 text-sm text-red-600">
+                {errors.phone?.message || ""}
+              </p>
             )}
           </div>
 
@@ -65,11 +89,11 @@ export default function RegisterPage() {
             <input
               type="email"
               {...register("email")}
-              className="mt-1 w-full rounded-md border border-gray-300 p-2 focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 w-full outline-none rounded-md border border-purple-300 p-2 focus:border-purple-500 focus:ring-blue-500"
             />
             {errors.email && (
               <p className="mt-1 text-sm text-red-600">
-                {errors.email.message}
+                {errors.email.message || ""}
               </p>
             )}
           </div>
@@ -79,11 +103,11 @@ export default function RegisterPage() {
             <input
               type="password"
               {...register("password")}
-              className="mt-1 w-full rounded-md border border-gray-300 p-2 focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 w-full outline-none rounded-md border border-purple-300 p-2 focus:border-purple-500 focus:ring-blue-500"
             />
             {errors.password && (
               <p className="mt-1 text-sm text-red-600">
-                {errors.password.message}
+                {errors.password.message || ""}
               </p>
             )}
           </div>
@@ -91,7 +115,7 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full rounded-md bg-blue-600 p-2 text-white hover:bg-blue-700 disabled:opacity-60"
+            className="w-full rounded-md bg-purple-600 p-2 text-white hover:bg-purple-700 disabled:opacity-60 cursor-pointer"
           >
             {isSubmitting ? "Creating account..." : "Register"}
           </button>
@@ -99,7 +123,7 @@ export default function RegisterPage() {
 
         <p className="mt-4 text-center text-sm text-gray-600">
           Already have an account?{" "}
-          <Link to="/login" className="text-blue-600 hover:underline">
+          <Link to="/login" className="text-purple-600 hover:underline">
             Sign In
           </Link>
         </p>
