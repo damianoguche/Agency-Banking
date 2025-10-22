@@ -23,6 +23,9 @@ export class LedgerEntry
   declare wallet_number: string;
   declare entry_type: "DEBIT" | "CREDIT";
   declare amount: number;
+
+  // Make TS know about the association
+  declare reference?: TransactionHistory;
 }
 
 LedgerEntry.init(
@@ -38,7 +41,8 @@ LedgerEntry.init(
       references: {
         model: TransactionHistory,
         key: "reference"
-      }
+      },
+      onDelete: "CASCADE"
     },
     wallet_number: {
       type: DataTypes.STRING,

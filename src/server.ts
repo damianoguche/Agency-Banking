@@ -34,9 +34,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
-app.use("/customers", customerRoutes);
-app.use("/transactions", transactionRoutes);
-app.use("/remediation", reconcileRoutes);
+app.use("/api/customers", customerRoutes);
+app.use("/api/transactions", transactionRoutes);
+app.use("/api/remediation", reconcileRoutes);
 
 // DB connection
 (async () => {

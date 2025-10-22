@@ -3,7 +3,6 @@ import type { Optional } from "sequelize";
 import sequelize from "../config/db.ts";
 import { Status } from "../types/status.ts";
 import { Type } from "../types/types.ts";
-import Wallet from "./wallet.ts";
 
 //Transaction Model (with typing)
 interface TransactionAttributes {
@@ -116,16 +115,3 @@ TransactionHistory.init(
 );
 
 export default TransactionHistory;
-
-Wallet.hasMany(TransactionHistory, {
-  foreignKey: "walletId",
-  as: "transactions"
-});
-
-TransactionHistory.belongsTo(Wallet, { foreignKey: "walletId", as: "wallet" });
-
-// Optional: for transfers
-TransactionHistory.belongsTo(Wallet, {
-  foreignKey: "senderWalletId",
-  as: "senderWallet"
-});

@@ -1,9 +1,9 @@
 import axios from "axios";
 
-const API = import.meta.env.VITE_API_BASE || "http://localhost:3000/api";
+const API = import.meta.env.VITE_API_BASE || "http://localhost:3000/";
 
 export async function loginUser(email: string, password: string) {
-  const res = await axios.post(`${API}/auth/login`, { email, password });
+  const res = await axios.post(`${API}/login`, { email, password });
   return res.data; // expected { token, user }
 }
 
@@ -13,9 +13,9 @@ export async function registerUser(
   email: string,
   password: string
 ) {
-  const res = await axios.post(`${API}/auth/register`, {
-    name,
-    phone,
+  const res = await axios.post(`${API}/register`, {
+    fullName: name,
+    phoneNumber: phone,
     email,
     password
   });
@@ -25,14 +25,14 @@ export async function registerUser(
 
 export async function getMe(token?: string) {
   const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-  const res = await axios.get(`${API}/auth/me`, config);
+  const res = await axios.get(`${API}/me`, config);
 
   return res.data; // expected { id, name, email, role }
 }
 
 export async function logoutUser() {
   try {
-    await axios.post(`${API}/auth/logout`);
+    await axios.post(`${API}/logout`);
   } catch (e) {
     console.warn("Logout failed (ignored):", e);
   }

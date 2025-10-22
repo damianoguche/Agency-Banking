@@ -7,6 +7,7 @@ interface CustomerAttributes {
   id: number;
   fullName: string;
   phoneNumber: string;
+  password: string;
   email?: string;
   bvn?: number;
   status?: string;
@@ -25,6 +26,7 @@ export class Customer
   declare fullName: string;
   declare phoneNumber: string;
   declare email?: string;
+  declare password: string;
   declare bvn?: number;
   declare status?: string;
   declare readonly created_at?: Date;
@@ -52,6 +54,10 @@ Customer.init(
     email: {
       type: DataTypes.STRING,
       allowNull: true
+    },
+    password: {
+      type: DataTypes.STRING,
+      allowNull: false
     },
     bvn: {
       type: DataTypes.BIGINT.UNSIGNED,
