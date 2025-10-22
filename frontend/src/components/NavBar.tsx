@@ -1,0 +1,50 @@
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
+
+export default function NavBar() {
+  const { user, logout } = useAuth();
+  const nav = useNavigate();
+  return (
+    <header className="bg-white shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16 items-center">
+          <div className="flex items-center gap-6">
+            <div className="text-xl font-bold">AgencyBank</div>
+            <nav className="hidden md:flex gap-4">
+              <Link to="/" className="text-sm">
+                Dashboard
+              </Link>
+              {user?.role === "admin" && (
+                <Link to="/admin" className="text-sm">
+                  Admin
+                </Link>
+              )}
+            </nav>
+          </div>
+          <div className="flex items-center gap-4">
+            {user ? (
+              <>
+                <div className="text-sm">
+                  Hi, <strong>{user.name}</strong>
+                </div>
+                <button
+                  onClick={() => {
+                    logout();
+                    nav("/login");
+                  }}
+                  className="px-3 py-1 border rounded"
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <Link to="/login" className="px-3 py-1 border rounded">
+                Sign in
+              </Link>
+            )}
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}

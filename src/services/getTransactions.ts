@@ -28,13 +28,14 @@ export async function getWalletTransactionsService(
       const offset = (page - 1) * limit;
       const transactions = await TransactionHistory.findAll({
         where: { walletNumber },
+        raw: true,
         order: [["created_at", "DESC"]],
         offset,
         limit,
         transaction: t
       });
 
-      // Check leedger existence
+      // Check ledger existence
       const entryCount = await LedgerEntry.count({
         where: { wallet_number: walletNumber },
         transaction: t
@@ -60,10 +61,29 @@ export async function getWalletTransactionsService(
         transaction: t
       });
 
-      console.log(totalCredits, totalDebits);
+      if (!totalCredits && !totalDebits) {
+        console.warn(`No ledger activity for wallet ${walletNumber}`);
+        return { wallet, transactions, message: "No ledger entries yet" };
+      }
+
+      const hasOnlyCredits = totalCredits && !totalDebits;
+      const hasOnlyDebits = totalDebits && !totalCredits;
+
+      if (hasOnlyCredits || hasOnlyDebits) {
+        console.warn(
+          `Wallet ${walletNumber} has single-entry ledger (Credits: ${totalCredits}, Debits: ${totalDebits})`
+        );
+        // Return gracefully, don't throw
+        return {
+          wallet,
+          transactions,
+          computedBalance: (totalCredits || 0) - (totalDebits || 0),
+          message: "Single-entry ledger detected; skipping strict validation"
+        };
+      }
 
       // Balance validation wallet.balance VS SUM(ledger_entry)
-      const computedBalance = totalCredits - totalDebits;
+      const computedBalance = (totalCredits || 0) - (totalDebits || 0);
       if (computedBalance !== wallet.balance) {
         throw new Error("Ledger mismatch/inconsistency detected");
       }

@@ -42,7 +42,6 @@ export default function AuditDashboard() {
 
   // Handle fix
   const handleFix = async (id: number) => {
-    console.log(id);
     setActionLoading(id);
     try {
       await api.post(`/remediation/${id}/fix`, { reviewer: "ITRiskOps" });
