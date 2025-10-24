@@ -15,7 +15,7 @@ export default function NavBar() {
                 Dashboard
               </Link>
               {user?.role === "admin" && (
-                <Link to="/admin" className="text-sm">
+                <Link to="/admin" className="text-sm text-white">
                   Admin
                 </Link>
               )}

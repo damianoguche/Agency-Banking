@@ -30,14 +30,23 @@ export default function LoginPage() {
     resolver: yupResolver(schema)
   });
 
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const navigate = useNavigate();
 
   const onSubmit = async (data: LoginInputs) => {
     try {
       await login(data.email, data.password);
+
+      // After login, wait for the user to populate in context
+      setTimeout(() => {
+        if (user?.role === "admin") {
+          navigate("/admin");
+        } else {
+          navigate("/dashboard");
+        }
+      }, 200);
+
       toast.success("Welcome back!");
-      navigate("/dashboard");
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Login failed");
       setShake(true);

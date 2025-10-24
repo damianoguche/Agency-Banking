@@ -19,12 +19,16 @@ export default function UsersList({
   refresh: () => void;
 }) {
   const { token } = useAuth();
-  const API = import.meta.env.VITE_API_BASE || "http://localhost:4000/api";
+  const API = import.meta.env.VITE_API_BASE;
 
   async function changeRole(id: string, role: string) {
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      await axios.put(`${API}/admin/users/${id}/role`, { role }, { headers });
+      await axios.put(
+        `${API}/admin/customers/${id}/role`,
+        { role },
+        { headers }
+      );
       toast.success("Role updated");
       refresh();
     } catch {

@@ -2,7 +2,7 @@ interface Transaction {
   id: string;
   type: "deposit" | "withdrawal" | "transfer";
   amount: number;
-  date: string;
+  created_at: string;
   status: string;
   description?: string;
 }
@@ -29,7 +29,9 @@ export default function TransactionsList({
         <tbody>
           {transactions.map((t) => (
             <tr key={t.id} className="border-b last:border-none">
-              <td className="p-3">{new Date(t.date).toLocaleDateString()}</td>
+              <td className="p-3">
+                {t.created_at.toString().slice(0, 19).replace("T", " ")}
+              </td>
               <td className="p-3 capitalize">{t.type}</td>
               <td className="p-3 font-medium">₦{t.amount.toLocaleString()}</td>
               <td

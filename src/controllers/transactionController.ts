@@ -56,11 +56,13 @@ export const creditWallet = async (
   req: Request<{}, {}, CreditRequestBody>,
   res: Response
 ): Promise<Response> => {
-  const { walletNumber, amount, narration } = req.body;
+  const { amount, narration } = req.body;
   const reference = req.body.reference ?? `CR-${randomUUID()}`;
   const sequelize = Wallet.sequelize!;
 
-  if (!walletNumber || !amount)
+  const customer = (req as any).customer;
+
+  if (!amount || amount <= 0)
     return res.status(400).json({ message: "Missing required fields!" });
 
   const amountNum = typeof amount === "string" ? parseFloat(amount) : amount;
@@ -73,13 +75,14 @@ export const creditWallet = async (
     await withTxRetry(sequelize, async (t) => {
       // Always lock Wallet first
       const wallet = await Wallet.findOne({
-        where: { walletNumber },
+        where: { customerId: customer.id },
         transaction: t,
         lock: t.LOCK.UPDATE
       });
 
       if (!wallet) {
-        return res.status(404).json({ message: "Wallet not found" });
+        throw new Error("Wallet not found");
+        //return res.status(404).json({ message: "Wallet not found" });
       }
 
       // Then check idempotency
@@ -104,7 +107,7 @@ export const creditWallet = async (
           amount: amountNum,
           reference,
           narration: narration || "Wallet credited",
-          walletNumber,
+          walletNumber: wallet.walletNumber,
           status: Status.SUCCESSFUL
         },
         { transaction: t }
@@ -113,7 +116,7 @@ export const creditWallet = async (
       await LedgerEntry.create(
         {
           transaction_reference: reference,
-          wallet_number: walletNumber,
+          wallet_number: wallet.walletNumber,
           entry_type: "CREDIT",
           amount
         },
@@ -125,7 +128,12 @@ export const creditWallet = async (
           aggregate_type: "Transaction",
           aggregate_id: reference,
           event_type: "WalletCredited",
-          payload: { reference, walletNumber, amount, type: Type.DEPOSIT },
+          payload: {
+            reference,
+            wallNumber: wallet.walletNumber,
+            amount,
+            type: Type.DEPOSIT
+          },
           published: false
         },
         { transaction: t }
@@ -133,11 +141,11 @@ export const creditWallet = async (
 
       return wallet;
     });
-    const updated = await Wallet.findOne({ where: { walletNumber } });
+
+    // const updated = await Wallet.findOne({ where: { walletNumber: wallet.walletNumber } });
 
     return res.status(200).json({
-      message: "Wallet credited",
-      balance: updated?.balance
+      message: "Wallet credited"
     });
   } catch (err: any) {
     // Write reversal record for audit
@@ -477,13 +485,11 @@ export const getRecentTransactions = async (req: Request, res: Response) => {
 
     // Empty result
     if (!transactions.length) {
-      return res
-        .status(200)
-        .json({
-          message: "No recent transactions found.",
-          count: 0,
-          transactions: []
-        });
+      return res.status(200).json({
+        message: "No recent transactions found.",
+        count: 0,
+        transactions: []
+      });
     }
 
     // Respond

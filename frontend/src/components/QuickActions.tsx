@@ -7,18 +7,20 @@ export default function QuickActions({ refresh }: { refresh: () => void }) {
   const { token } = useAuth();
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
-  const API = import.meta.env.VITE_API_BASE || "http://localhost:3000/api";
+  const API = import.meta.env.VITE_TX_API_BASE;
 
   async function handleAction(type: "deposit" | "withdraw" | "transfer") {
     if (!amount) return toast.error("Enter an amount");
+
     setLoading(true);
     try {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       await axios.post(
-        `${API}/wallet/${type}`,
+        `${API}/${type}`,
         { amount: parseFloat(amount) },
         { headers }
       );
+
       toast.success(`${type} successful`);
       setAmount("");
       refresh();

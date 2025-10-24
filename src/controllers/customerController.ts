@@ -165,6 +165,7 @@ export const loginCustomer = async (req: Request, res: Response) => {
         name: customer.fullName,
         email: customer.email,
         phone: customer.phoneNumber,
+        role: customer.role,
         walletNumber: wallet.walletNumber
       }
     });

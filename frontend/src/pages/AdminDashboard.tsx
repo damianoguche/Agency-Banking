@@ -29,7 +29,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const API = import.meta.env.VITE_API_BASE || "http://localhost:3000/api";
+  const API = import.meta.env.VITE_API_BASE;
 
   async function loadData() {
     setLoading(true);
@@ -37,7 +37,7 @@ export default function AdminDashboard() {
       const headers = { Authorization: `Bearer ${token}` };
       const [eventRes, userRes] = await Promise.all([
         axios.get(`${API}/admin/events`, { headers }),
-        axios.get(`${API}/admin/users`, { headers })
+        axios.get(`${API}/admin/customers`, { headers })
       ]);
       setEvents(eventRes.data.events || []);
       setUsers(userRes.data.users || []);

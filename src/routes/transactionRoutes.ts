@@ -10,9 +10,9 @@ import { authenticate } from "../middleware/authMiddleware.ts";
 
 const router = Router();
 
-router.post("/credit", creditWallet);
-router.post("/debit", debitWallet);
-router.post("/transfer", transferFunds);
+router.post("/deposit", authenticate, creditWallet);
+router.post("/withdrawal", authenticate, debitWallet);
+router.post("/transfer", authenticate, transferFunds);
 router.get("/:walletId", getWalletTransactions);
 router.get(
   "/:walletNumber/recentTransactions",

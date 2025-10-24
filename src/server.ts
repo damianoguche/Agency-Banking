@@ -11,6 +11,7 @@ dotenv.config();
 import express from "express";
 import cors from "cors";
 import sequelize from "./config/db.ts";
+import adminRoutes from "./routes/adminRoutes.ts";
 import customerRoutes from "./routes/customerRoutes.ts";
 import transactionRoutes from "./routes/transactionRoutes.ts";
 import reconcileRoutes from "./routes/reconRoutes.ts";
@@ -45,6 +46,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/customers", customerRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/remediation", reconcileRoutes);
+app.use("/api/admin", adminRoutes);
 
 // DB connection
 (async () => {

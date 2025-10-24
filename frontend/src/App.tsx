@@ -49,11 +49,9 @@ export default function App() {
             {/* Default redirect */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-            {/* Auth routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
 
-            {/* User dashboard */}
             <Route
               path="/dashboard"
               element={
@@ -63,7 +61,6 @@ export default function App() {
               }
             />
 
-            {/* Admin dashboard */}
             <Route
               path="/admin"
               element={
