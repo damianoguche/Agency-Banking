@@ -24,7 +24,7 @@ export default function NavBar() {
           <div className="flex items-center gap-4">
             {user ? (
               <>
-                <div className="text-sm">
+                <div className="text-sm text-white">
                   Hi, <strong>{user.name}</strong>
                 </div>
                 <button
@@ -32,7 +32,7 @@ export default function NavBar() {
                     logout();
                     nav("/login");
                   }}
-                  className="px-3 py-1 border rounded"
+                  className="px-3 py-1 border rounded text-white cursor-pointer"
                 >
                   Sign out
                 </button>

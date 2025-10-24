@@ -1,3 +1,5 @@
+// This keeps track of the logged-in user across your whole app.
+
 import { createContext, useContext, useEffect, useState } from "react";
 import {
   getMe,
@@ -10,6 +12,8 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  phone: string;
+  walletNumber: string;
   role: "user" | "admin";
 }
 
@@ -37,6 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Toggle this based on your backend token flow
   const useLocalStorage = true;
 
+  // Called once on app startup
   useEffect(() => {
     const init = async () => {
       try {
@@ -44,6 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const savedToken = localStorage.getItem("token");
           if (savedToken) {
             setToken(savedToken);
+            // Validate token & fetch user info
             const profile = await getMe(savedToken);
             setUser(profile);
           }

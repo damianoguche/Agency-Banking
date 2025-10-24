@@ -11,6 +11,7 @@ interface CustomerAttributes {
   email?: string;
   bvn?: number;
   status?: string;
+  role?: string;
   created_at?: Date;
   updated_at?: Date;
 }
@@ -29,6 +30,7 @@ export class Customer
   declare password: string;
   declare bvn?: number;
   declare status?: string;
+  declare role?: string;
   declare readonly created_at?: Date;
   declare readonly updated_at?: Date;
 
@@ -67,6 +69,7 @@ Customer.init(
       type: DataTypes.ENUM("active", "inactive"),
       defaultValue: "active"
     },
+    role: { type: DataTypes.STRING, defaultValue: "user" },
     created_at: {
       //DB-leel fallback
       type: DataTypes.DATE,

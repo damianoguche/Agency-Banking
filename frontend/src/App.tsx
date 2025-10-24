@@ -8,7 +8,12 @@ import AdminDashboard from "./pages/AdminDashboard.tsx";
 import NavBar from "./components/NavBar.tsx";
 import { useAuth } from "./hooks/useAuth.tsx";
 
-// Protected route wrapper with role-based access control
+/**
+ * AuthProvider wraps your routes and how /me initializes your session
+ * automatically.
+ * Protected route wrapper with role-based access control
+ * */
+
 function ProtectedRoute({
   children,
   role

@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API = import.meta.env.VITE_API_BASE || "http://localhost:3000/";
+const API = import.meta.env.VITE_CX_API_BASE;
 
 export async function loginUser(email: string, password: string) {
   const res = await axios.post(`${API}/login`, { email, password });
@@ -31,8 +31,15 @@ export async function getMe(token?: string) {
 }
 
 export async function logoutUser() {
+  const token = localStorage.getItem("token");
   try {
-    await axios.post(`${API}/logout`);
+    await axios.post(
+      `${API}/logout`,
+      {},
+      {
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
   } catch (e) {
     console.warn("Logout failed (ignored):", e);
   }

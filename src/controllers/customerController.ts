@@ -12,7 +12,9 @@ import Wallet from "../models/wallet.ts";
 import { createWalletNumber } from "../util/wallet_number.ts";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import type { SignOptions } from "jsonwebtoken";
 import { hashPassword } from "../util/passwordUtils.ts";
+import ms from "ms";
 
 // Create Customer
 export const createCustomer = async (req: Request, res: Response) => {
@@ -112,7 +114,7 @@ export const createWallet = async (req: Request, res: Response) => {
   }
 };
 
-/// Login Customer
+// Login Customer
 export const loginCustomer = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
@@ -123,23 +125,36 @@ export const loginCustomer = async (req: Request, res: Response) => {
         .json({ message: "Email and password are required" });
     }
 
+    // Check for existing customer
     const customer = await Customer.findOne({ where: { email } });
     if (!customer) {
-      return res.status(401).json({ message: "Invalid email or password" });
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
     // Compare password
-    const validPassword = await bcrypt.compare(password, customer.password);
-    if (!validPassword) {
-      return res.status(401).json({ message: "Invalid email or password" });
+    const isMatch = await bcrypt.compare(password, customer.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
+    // Get wallet for this customer
+    const wallet = await Wallet.findOne({
+      where: { customerId: customer.id },
+      attributes: ["walletNumber", "balance"]
+    });
+
+    if (!wallet)
+      return res
+        .status(404)
+        .json({ message: "No wallet found for this customer." });
+
     // Create JWT
-    const token = jwt.sign(
-      { id: customer.id, email: customer.email },
-      process.env.JWT_SECRET!,
-      { expiresIn: "7d" } // token valid for 7 days
-    );
+    const payload = { id: customer.id, email: customer.email };
+    const secret = process.env.JWT_SECRET as string;
+    const expiresIn = process.env.JWT_EXPIRES_IN as ms.StringValue;
+
+    const options: SignOptions = { expiresIn };
+    const token = jwt.sign(payload, secret, options);
 
     // Return success response
     return res.status(200).json({
@@ -149,11 +164,71 @@ export const loginCustomer = async (req: Request, res: Response) => {
         id: customer.id,
         name: customer.fullName,
         email: customer.email,
-        phone: customer.phoneNumber
+        phone: customer.phoneNumber,
+        walletNumber: wallet.walletNumber
       }
     });
   } catch (err: any) {
     console.error("Login error:", err);
     return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+// Logout customer
+export const logoutCustomer = async (req: Request, res: Response) => {
+  // Just inform client to delete token from localStorage
+  res.json({ message: "Logout successful" });
+};
+
+// Get me
+// profile + session verification endpoint.
+export const getMe = async (req: Request, res: Response) => {
+  try {
+    const customer = (req as any).customer;
+
+    return res.status(200).json({
+      id: customer.id,
+      name: customer.fullName,
+      email: customer.email,
+      role: customer.role
+    });
+  } catch (err) {
+    return res
+      .status(500)
+      .json({ message: "Failed to fetch user", error: err });
+  }
+};
+
+// Get wallet balance
+export const getWalletBalance = async (req: Request, res: Response) => {
+  try {
+    const { walletNumber } = req.params;
+
+    // Validate request
+    if (!walletNumber) {
+      return res.status(400).json({ message: "Wallet number is required." });
+    }
+
+    // Find wallet
+    const wallet = await Wallet.findOne({
+      where: { walletNumber },
+      attributes: ["walletNumber", "balance", "currency", "updated_at"]
+    });
+
+    if (!wallet) {
+      return res.status(404).json({ message: "Wallet not found." });
+    }
+
+    // Return response
+    return res.status(200).json({
+      message: "Wallet balance retrieved.",
+      balance: wallet.balance
+    });
+  } catch (error: any) {
+    console.error("Error fetching wallet balance:", error);
+    return res.status(500).json({
+      message: "An error occurred while fetching wallet balance.",
+      error: error.message
+    });
   }
 };

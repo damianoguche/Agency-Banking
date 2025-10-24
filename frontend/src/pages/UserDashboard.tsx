@@ -21,18 +21,34 @@ export default function UserDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const API = import.meta.env.VITE_API_BASE || "http://localhost:3000/api";
+  const CxAPI = import.meta.env.VITE_CX_API_BASE;
+  const TxAPI = import.meta.env.VITE_TX_API_BASE;
 
   async function fetchData() {
+    if (!user?.walletNumber) {
+      console.warn("No wallet number yet — skipping fetch");
+      return;
+    }
     setLoading(true);
+    setError(null);
+
     try {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const [balanceRes, txnRes] = await Promise.all([
-        axios.get(`${API}/wallet/balance`, { headers }),
-        axios.get(`${API}/transactions/recent`, { headers })
-      ]);
-      setBalance(balanceRes.data.balance || 0);
-      setTransactions(txnRes.data.transactions || []);
+
+      try {
+        const [balanceRes, txnRes] = await Promise.all([
+          axios.get(`${CxAPI}/${user?.walletNumber}/balance`, { headers }),
+          axios.get(`${TxAPI}/${user?.walletNumber}/recentTransactions`, {
+            headers
+          })
+          //axios.get(`${TxAPI}/me`, { headers })
+        ]);
+
+        setBalance(balanceRes.data.balance || 0);
+        setTransactions(txnRes.data.transactions || []);
+      } catch (error) {
+        console.log(error);
+      }
     } catch (err: any) {
       console.error(err);
       setError(err?.response?.data?.message || "Failed to load dashboard");

@@ -391,3 +391,106 @@ export const getWalletTransactions = async (req: Request, res: Response) => {
     res.status(500).json({ idempotencyKey, message: err.message });
   }
 };
+
+/**
+ * Retrieve recent transactions for the authenticated customer.
+ * Requires the "authenticate" middleware to set req.user from JWT.
+ */
+// export const getRecentTransactions = async (req: Request, res: Response) => {
+//   try {
+//     // Ensure authentication middleware set req.customer
+//     const customer = req.customer as { id: number; email: string };
+//     if (!customer || !customer.id) {
+//       return res.status(401).json({ message: "Unauthorized access." });
+//     }
+
+//     const limit = parseInt(req.query.limit as string) || 10;
+
+//     // Find user's wallet
+//     const wallet = await Wallet.findOne({
+//       where: { customerId: customer.id },
+//       attributes: ["walletNumber"]
+//     });
+
+//     if (!wallet) {
+//       return res
+//         .status(404)
+//         .json({ message: "Wallet not found for this user." });
+//     }
+
+//     // Fetch transactions
+//     const transactions = await TransactionHistory.findAll({
+//       where: { walletNumber: wallet.walletNumber },
+//       order: [["created_at", "DESC"]],
+//       limit,
+//       attributes: [
+//         "id",
+//         "walletNumber",
+//         "amount",
+//         "type",
+//         "reference",
+//         "status",
+//         "created_at"
+//       ]
+//     });
+
+//     return res.status(200).json({
+//       message: "Recent transactions retrieved successfully.",
+//       walletNumber: wallet.walletNumber,
+//       count: transactions.length,
+//       data: transactions
+//     });
+//   } catch (error: any) {
+//     console.error("Error fetching recent transactions:", error);
+//     return res.status(500).json({
+//       message: "An error occurred while fetching recent transactions.",
+//       error: error.message
+//     });
+//   }
+// };
+
+export const getRecentTransactions = async (req: Request, res: Response) => {
+  try {
+    const { walletNumber } = req.params;
+    const limit = parseInt(req.query.limit as string) || 10;
+
+    // Validate
+    if (!walletNumber) {
+      return res.status(400).json({ message: "Wallet number is required." });
+    }
+
+    // Fetch transactions
+    const transactions = await TransactionHistory.findAll({
+      where: { walletNumber },
+      order: [["created_at", "DESC"]],
+      limit,
+      attributes: [
+        "id",
+        "walletNumber",
+        "amount",
+        "type",
+        "reference",
+        "status",
+        "created_at"
+      ]
+    });
+
+    // Empty result
+    if (!transactions.length) {
+      return res.status(404).json({ message: "No recent transactions found." });
+    }
+
+    // Respond
+    return res.status(200).json({
+      message: "Recent transactions retrieved.",
+      count: transactions.length,
+      transactions
+    });
+  } catch (error: any) {
+    console.error("Error fetching recent transactions:", error);
+    return res.status(500).json({
+      message: "An error occurred while fetching recent transactions.",
+      error: error.message
+    });
+  }
+};

@@ -49,7 +49,7 @@ export default function QuickActions({ refresh }: { refresh: () => void }) {
             key={type}
             disabled={loading}
             onClick={() => handleAction(type as any)}
-            className="rounded-md bg-blue-600 text-white py-2 hover:bg-blue-700 disabled:opacity-60 capitalize"
+            className="rounded-md bg-purple-600 text-white py-2 hover:bg-purple-800 disabled:opacity-60 capitalize cursor-pointer"
           >
             {type}
           </button>
