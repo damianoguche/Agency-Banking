@@ -27,6 +27,7 @@ export default function UserDashboard() {
   async function fetchData() {
     if (!user?.walletNumber) {
       console.warn("No wallet number yet — skipping fetch");
+      setLoading(false);
       return;
     }
     setLoading(true);

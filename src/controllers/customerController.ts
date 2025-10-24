@@ -186,11 +186,26 @@ export const getMe = async (req: Request, res: Response) => {
   try {
     const customer = (req as any).customer;
 
+    // Re-fetch with wallet association to ensure walletNumber is included
+    const fullCustomer = await Customer.findByPk(customer.id, {
+      include: [{ model: Wallet, as: "wallets", attributes: ["walletNumber"] }]
+    });
+
+    if (!fullCustomer) {
+      return res.status(404).json({ message: "Customer not found" });
+    }
+
+    // safely handle undefined/null arrays
+    const wallets = (fullCustomer as any).wallets as Wallet[] | undefined;
+    const walletNumber = wallets?.[0]?.walletNumber ?? null;
+
     return res.status(200).json({
-      id: customer.id,
-      name: customer.fullName,
-      email: customer.email,
-      role: customer.role
+      id: fullCustomer.id,
+      name: fullCustomer.fullName,
+      email: fullCustomer.email,
+      phone: fullCustomer.phoneNumber,
+      walletNumber,
+      role: fullCustomer.role
     });
   } catch (err) {
     return res
@@ -222,7 +237,7 @@ export const getWalletBalance = async (req: Request, res: Response) => {
     // Return response
     return res.status(200).json({
       message: "Wallet balance retrieved.",
-      balance: wallet.balance
+      balance: Number(wallet.balance)
     });
   } catch (error: any) {
     console.error("Error fetching wallet balance:", error);

@@ -477,7 +477,13 @@ export const getRecentTransactions = async (req: Request, res: Response) => {
 
     // Empty result
     if (!transactions.length) {
-      return res.status(404).json({ message: "No recent transactions found." });
+      return res
+        .status(200)
+        .json({
+          message: "No recent transactions found.",
+          count: 0,
+          transactions: []
+        });
     }
 
     // Respond

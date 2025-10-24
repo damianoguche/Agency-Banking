@@ -23,6 +23,6 @@ router.get("/:walletNumber/balance", authenticate, getWalletBalance);
  * or protected route access.
  */
 
-router.post("/me", authenticate, getMe);
+router.get("/me", authenticate, getMe);
 
 export default router;
