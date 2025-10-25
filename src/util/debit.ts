@@ -3,12 +3,13 @@ import Wallet from "../models/wallet.ts";
 import TransactionHistory from "../models/transaction.ts";
 import { Transaction } from "sequelize";
 import { Status } from "../types/status.ts";
-import { Type } from "../types/types.ts";
+import { Type } from "../types/transaction_types.ts";
 import { LedgerEntry } from "../models/ledger.ts";
 import Outbox from "../models/outbox.ts";
 import { AppError } from "./errors.ts";
 
 export async function withdrawal(
+  type: Type,
   walletNumber: string,
   amount: number,
   naration?: string,
@@ -53,7 +54,7 @@ export async function withdrawal(
     // ---Record transaction ---
     const txn = await TransactionHistory.create(
       {
-        type: Type.WITHDRAWAL,
+        type,
         walletNumber,
         amount,
         reference,
@@ -79,8 +80,8 @@ export async function withdrawal(
       {
         aggregate_type: "Transaction",
         aggregate_id: reference,
-        event_type: "Wallet Credited",
-        payload: { reference, walletNumber, amount, type: Type.WITHDRAWAL },
+        event_type: type,
+        payload: { reference, walletNumber, amount, type },
         published: false
       },
       { transaction: t }

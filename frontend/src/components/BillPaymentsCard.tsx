@@ -1,80 +1,8 @@
-// import { useForm } from "react-hook-form";
-// import toast from "react-hot-toast";
-// import axios from "axios";
-
-// interface BillFormData {
-//   category: string;
-//   accountNumber: string;
-//   amount: number;
-// }
-
-// export default function BillPaymentsCard() {
-//   const {
-//     register,
-//     handleSubmit,
-//     reset,
-//     formState: { isSubmitting }
-//   } = useForm<BillFormData>();
-//   const TxAPI = import.meta.env.VITE_TX_API_BASE;
-
-//   const onSubmit = async (data: BillFormData) => {
-//     try {
-//       await axios.post(`${TxAPI}/bills/pay`, data);
-//       toast.success("Bill payment successful!");
-//       reset();
-//     } catch (err: any) {
-//       toast.error(err?.response?.data?.message || "Payment failed");
-//     }
-//   };
-
-//   return (
-//     <div className="rounded-xl bg-white p-6 shadow-md border border-gray-100 flex flex-col justify-between">
-//       <h2 className="text-lg font-semibold text-gray-800 mb-4">
-//         Bill Payments
-//       </h2>
-
-//       <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-//         <select
-//           {...register("category", { required: true })}
-//           className="w-full border border-purple-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
-//         >
-//           <option value="">Select bill type</option>
-//           <option value="electricity">Electricity</option>
-//           <option value="tv">Cable TV</option>
-//           <option value="internet">Internet</option>
-//           <option value="water">Water</option>
-//         </select>
-
-//         <input
-//           type="text"
-//           placeholder="Customer / Meter Number"
-//           {...register("accountNumber", { required: true })}
-//           className="w-full border border-purple-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
-//         />
-
-//         <input
-//           type="number"
-//           placeholder="Amount (₦)"
-//           {...register("amount", { required: true, min: 100 })}
-//           className="w-full border border-purple-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
-//         />
-
-//         <button
-//           type="submit"
-//           disabled={isSubmitting}
-//           className="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition disabled:opacity-60 cursor-pointer"
-//         >
-//           {isSubmitting ? "Processing..." : "Pay Bill"}
-//         </button>
-//       </form>
-//     </div>
-//   );
-// }
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import axios from "axios";
+import { useAuth } from "../hooks/useAuth";
 
 interface BillPaymentForm {
   billType: string;
@@ -82,8 +10,9 @@ interface BillPaymentForm {
   account: string;
 }
 
-export default function BillPaymentsCard() {
+export default function BillPaymentsCard({ refresh }: { refresh: () => void }) {
   const TxAPI = import.meta.env.VITE_TX_API_BASE;
+  const { token } = useAuth();
 
   const { register, handleSubmit, reset } = useForm<BillPaymentForm>();
   const [loading, setLoading] = useState(false);
@@ -91,10 +20,13 @@ export default function BillPaymentsCard() {
   const onSubmit = async (data: BillPaymentForm) => {
     setLoading(true);
     try {
-      console.log("Bill payment:", data);
-      await axios.post(`${TxAPI}/bills/pay`, data);
+      const headers = { Authorization: `Bearer ${token}` };
+      await axios.post(`${TxAPI}/bills/pay`, data, { headers });
       toast.success("Bill payment successful!");
+      refresh();
       reset();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message);
     } finally {
       setLoading(false);
     }
@@ -142,7 +74,7 @@ export default function BillPaymentsCard() {
         <button
           type="submit"
           disabled={loading}
-          className="bg-purple-600 text-white text-sm py-1.5 rounded-lg hover:bg-purple-700 transition disabled:opacity-60 mt-1"
+          className="bg-purple-600 text-white text-sm py-1.5 rounded-lg hover:bg-purple-700 transition disabled:opacity-60 mt-1 cursor-pointer"
         >
           {loading ? "Processing..." : "Pay Bill"}
         </button>

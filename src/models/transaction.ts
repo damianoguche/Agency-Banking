@@ -2,7 +2,7 @@ import { DataTypes, Model } from "sequelize";
 import type { Optional } from "sequelize";
 import sequelize from "../config/db.ts";
 import { Status } from "../types/status.ts";
-import { Type } from "../types/types.ts";
+import { Type } from "../types/transaction_types.ts";
 
 //Transaction Model (with typing)
 interface TransactionAttributes {

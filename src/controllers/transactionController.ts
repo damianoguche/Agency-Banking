@@ -14,7 +14,7 @@ import { withdrawal } from "../util/debit.ts";
 import TransactionHistory from "../models/transaction.ts";
 import { randomUUID } from "crypto";
 import { Status } from "../types/status.ts";
-import { Type } from "../types/types.ts";
+import { Type } from "../types/transaction_types.ts";
 import { LedgerEntry } from "../models/ledger.ts";
 import { withTxRetry } from "../util/retry.ts";
 import Outbox from "../models/outbox.ts";
@@ -194,6 +194,7 @@ export const debitWallet = async (
 
     // Perform withdrawal
     const { txn, wallet: updatedWallet } = await withdrawal(
+      Type.WITHDRAWAL,
       wallet.walletNumber,
       amountNum,
       "Wallet debit initiated by customer"

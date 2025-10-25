@@ -96,7 +96,7 @@ export default function UserDashboard() {
             <AirtimeRechargeCard refresh={fetchData} />
           </div>
           <div className="w-full max-w-sm">
-            <BillPaymentsCard />
+            <BillPaymentsCard refresh={fetchData} />
           </div>
         </div>
 

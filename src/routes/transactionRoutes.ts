@@ -7,6 +7,8 @@ import {
   getRecentTransactions
 } from "../controllers/transactionController.ts";
 import { authenticate } from "../middleware/authMiddleware.ts";
+import { rechargeAirtime } from "../controllers/airtimeController.ts";
+import { payBill } from "../controllers/billController.ts";
 
 const router = Router();
 
@@ -20,7 +22,7 @@ router.get(
   getRecentTransactions
 );
 
-// // Protected route
-// router.get("/me", authenticate, getRecentTransactions);
+router.post("/airtime/recharge", authenticate, rechargeAirtime);
+router.post("/bills/pay", authenticate, payBill);
 
 export default router;

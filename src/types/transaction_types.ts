@@ -3,5 +3,6 @@ export enum Type {
   WITHDRAWAL = "withdrawal",
   REVERSAL = "reversal",
   TRANSFER = "transfer",
-  FEE_CHARGE = "fee-charge"
+  AIRTIME_PURCHASE = "airtime_purchase",
+  BILL_PAYMENT = "bill_payment"
 }
