@@ -16,7 +16,11 @@ import type { SignOptions } from "jsonwebtoken";
 import { hashPassword } from "../util/passwordUtils.ts";
 import ms from "ms";
 
-// Create Customer
+/**
+ * POST /api/customers/register
+ * Accessible by all users
+ * Creates new customers
+ */
 export const createCustomer = async (req: Request, res: Response) => {
   const t = (await Customer.sequelize?.transaction()) ?? null;
   try {
@@ -152,7 +156,6 @@ export const loginCustomer = async (req: Request, res: Response) => {
     const payload = { id: customer.id, email: customer.email };
     const secret = process.env.JWT_SECRET as string;
     const expiresIn = process.env.JWT_EXPIRES_IN as ms.StringValue;
-
     const options: SignOptions = { expiresIn };
     const token = jwt.sign(payload, secret, options);
 
@@ -177,7 +180,7 @@ export const loginCustomer = async (req: Request, res: Response) => {
 
 // Logout customer
 export const logoutCustomer = async (req: Request, res: Response) => {
-  // Just inform client to delete token from localStorage
+  // Client deletes token from localStorage
   res.json({ message: "Logout successful" });
 };
 

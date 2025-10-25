@@ -4,7 +4,7 @@
  * Generate a wallet with a prefix based on wallet type.
  * - SAVINGS → 300
  * - CURRENT → 310
- * Defaults to 999 if type is not recognized.
+ * Defaults to 300 if type is not specified.
  */
 
 import { faker } from "@faker-js/faker";
@@ -19,8 +19,8 @@ export const createWalletNumber = async (
     CURRENT: "310"
   };
 
-  // Choose prefix based on type (fallback = 999)
-  const prefix = prefixMap[walletType?.toUpperCase() || ""] || "999";
+  // Choose prefix based on type (fallback = 300)
+  const prefix = prefixMap[walletType?.toUpperCase() || ""] || "300";
 
   // Ensure the total length = 10 digits
   const remainingLength = 10 - prefix.length;

@@ -4,6 +4,8 @@ import axios from "axios";
 import BalanceCard from "../components/BalanceCard.tsx";
 import QuickActions from "../components/QuickActions.tsx";
 import TransactionsList from "../components/TransactionsList.tsx";
+import AirtimeRechargeCard from "../components/AirtimeRechargeCard.tsx";
+import BillPaymentsCard from "../components/BillPaymentsCard.tsx";
 
 interface Transaction {
   id: string;
@@ -35,21 +37,15 @@ export default function UserDashboard() {
 
     try {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const [balanceRes, txnRes] = await Promise.all([
+        axios.get(`${CxAPI}/${user?.walletNumber}/balance`, { headers }),
+        axios.get(`${TxAPI}/${user?.walletNumber}/recentTransactions`, {
+          headers
+        })
+      ]);
 
-      try {
-        const [balanceRes, txnRes] = await Promise.all([
-          axios.get(`${CxAPI}/${user?.walletNumber}/balance`, { headers }),
-          axios.get(`${TxAPI}/${user?.walletNumber}/recentTransactions`, {
-            headers
-          })
-          //axios.get(`${TxAPI}/me`, { headers })
-        ]);
-
-        setBalance(balanceRes.data.balance || 0);
-        setTransactions(txnRes.data.transactions || []);
-      } catch (error) {
-        console.log(error);
-      }
+      setBalance(balanceRes.data.balance || 0);
+      setTransactions(txnRes.data.transactions || []);
     } catch (err: any) {
       console.error(err);
       setError(err?.response?.data?.message || "Failed to load dashboard");
@@ -75,7 +71,7 @@ export default function UserDashboard() {
         <p>{error}</p>
         <button
           onClick={fetchData}
-          className="mt-4 rounded bg-blue-600 px-4 py-2 text-white"
+          className="mt-4 rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700 transition"
         >
           Retry
         </button>
@@ -83,21 +79,33 @@ export default function UserDashboard() {
     );
 
   return (
-    <div className="p-4 md:p-8">
-      <h1 className="text-2xl font-semibold text-gray-800 mb-6">
-        Welcome, {user?.name}
-      </h1>
+    <div className="p-4 md:p-8 flex flex-col items-center">
+      <div className="w-full max-w-5xl">
+        <h1 className="text-2xl font-semibold text-gray-800 mb-6 text-center md:text-left">
+          Welcome, {user?.name}
+        </h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <BalanceCard balance={balance} />
-        <QuickActions refresh={fetchData} />
-      </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 justify-items-center">
+          <div className="w-full max-w-sm">
+            <BalanceCard balance={balance} />
+          </div>
+          <div className="w-full max-w-sm">
+            <QuickActions refresh={fetchData} />
+          </div>
+          <div className="w-full max-w-sm">
+            <AirtimeRechargeCard refresh={fetchData} />
+          </div>
+          <div className="w-full max-w-sm">
+            <BillPaymentsCard />
+          </div>
+        </div>
 
-      <div className="mt-10">
-        <h2 className="text-lg font-semibold mb-3 text-gray-700">
-          Recent Transactions
-        </h2>
-        <TransactionsList transactions={transactions} />
+        <div className="mt-10">
+          <h2 className="text-lg font-semibold mb-3 text-gray-700 text-center md:text-left">
+            Recent Transactions
+          </h2>
+          <TransactionsList transactions={transactions} />
+        </div>
       </div>
     </div>
   );

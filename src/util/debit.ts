@@ -6,11 +6,12 @@ import { Status } from "../types/status.ts";
 import { Type } from "../types/types.ts";
 import { LedgerEntry } from "../models/ledger.ts";
 import Outbox from "../models/outbox.ts";
+import { AppError } from "./errors.ts";
 
 export async function withdrawal(
   walletNumber: string,
   amount: number,
-  naration: string,
+  naration?: string,
   idempotencyKey?: string
 ): Promise<{ wallet: Wallet; txn: TransactionHistory }> {
   const t = await Wallet.sequelize!.transaction({
@@ -32,7 +33,7 @@ export async function withdrawal(
       // rollback to release locks before returning
       await t.rollback();
       const existingWallet = await Wallet.findOne({ where: { walletNumber } });
-      if (!existingWallet) throw new Error("Wallet not found");
+      if (!existingWallet) throw new AppError("Wallet not found", 400);
       return { wallet: existingWallet, txn: existingTxn };
     }
 
@@ -42,8 +43,8 @@ export async function withdrawal(
       lock: t.LOCK.UPDATE // row level lock
     });
 
-    if (!wallet) throw new Error("Wallet not found");
-    if (wallet.balance < amount) throw new Error("Insufficient funds");
+    if (!wallet) throw new AppError("Wallet not found", 404);
+    if (wallet.balance < amount) throw new AppError("Insufficient funds", 400);
 
     // ---Perform debit ---
     wallet.balance -= amount;

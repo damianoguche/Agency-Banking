@@ -62,8 +62,7 @@ export const creditWallet = async (
 
   const customer = (req as any).customer;
 
-  if (!amount || amount <= 0)
-    return res.status(400).json({ message: "Missing required fields!" });
+  if (!amount) return res.status(400).json({ message: "Enter amount" });
 
   const amountNum = typeof amount === "string" ? parseFloat(amount) : amount;
 
@@ -142,8 +141,6 @@ export const creditWallet = async (
       return wallet;
     });
 
-    // const updated = await Wallet.findOne({ where: { walletNumber: wallet.walletNumber } });
-
     return res.status(200).json({
       message: "Wallet credited"
     });
@@ -162,30 +159,51 @@ export const creditWallet = async (
   }
 };
 
-// Debit Wallet
+// Debit Wallet Controller
 export const debitWallet = async (
   req: Request<{}, {}, DebitRequestBody>,
   res: Response
 ): Promise<Response> => {
-  const { walletNumber, amount, narration } = req.body;
-
-  if (!walletNumber || !amount || !narration)
-    return res.status(400).json({ message: "Missing required fields!" });
-
-  const amount_num = typeof amount === "string" ? parseFloat(amount) : amount;
-
-  if (isNaN(amount_num) || amount_num <= 0) {
-    return res.status(400).json({ message: "Invalid amount entered." });
-  }
-
   try {
-    const { txn, wallet } = await withdrawal(
-      walletNumber,
-      amount_num,
-      narration
+    const customer = (req as any).customer;
+
+    // Validate authenticated customer
+    if (!customer?.id) {
+      return res.status(401).json({ message: "Unauthorized access" });
+    }
+
+    // Fetch wallet
+    const wallet = await Wallet.findOne({
+      where: { customerId: customer.id }
+    });
+
+    if (!wallet) {
+      return res.status(404).json({ message: "Wallet not found" });
+    }
+
+    // Validate amount
+    const { amount } = req.body;
+    if (!amount) {
+      return res.status(400).json({ message: "Enter amount" });
+    }
+
+    const amountNum = typeof amount === "string" ? parseFloat(amount) : amount;
+    if (isNaN(amountNum) || amountNum <= 0) {
+      return res.status(400).json({ message: "Invalid amount entered" });
+    }
+
+    // Perform withdrawal
+    const { txn, wallet: updatedWallet } = await withdrawal(
+      wallet.walletNumber,
+      amountNum,
+      "Wallet debit initiated by customer"
     );
 
-    return res.status(200).json({ message: "Wallet debited", txn, wallet });
+    return res.status(200).json({
+      message: "Wallet debited",
+      transaction: txn,
+      wallet: updatedWallet
+    });
   } catch (err: any) {
     const msg =
       err.message === "Wallet not found" || err.message === "Insufficient funds"
@@ -492,17 +510,17 @@ export const getRecentTransactions = async (req: Request, res: Response) => {
       });
     }
 
-    // Respond
+    // Response
     return res.status(200).json({
       message: "Recent transactions retrieved.",
       count: transactions.length,
       transactions
     });
-  } catch (error: any) {
-    console.error("Error fetching recent transactions:", error);
+  } catch (err: any) {
+    console.error("Error fetching recent transactions:", err);
     return res.status(500).json({
-      message: "An error occurred while fetching recent transactions.",
-      error: error.message
+      message: "Error fetching recent transactions.",
+      error: err.message
     });
   }
 };
