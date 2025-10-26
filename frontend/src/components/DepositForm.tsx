@@ -11,15 +11,12 @@ const schema = yup.object({
     .typeError("Enter a valid amount")
     .positive("Amount must be positive")
     .required("Amount is required"),
-  source: yup
-    .string()
-    .required("Funding source is required")
-    .oneOf(["bank", "cash", "transfer"], "Invalid source")
+  narration: yup.string().required("Narration is required")
 });
 
 export default function DepositForm({ onSuccess }: { onSuccess: () => void }) {
   const { token } = useAuth();
-  const API = import.meta.env.VITE_API_BASE;
+  const API = import.meta.env.VITE_TX_API_BASE;
 
   const {
     register,
@@ -33,7 +30,7 @@ export default function DepositForm({ onSuccess }: { onSuccess: () => void }) {
   const onSubmit = async (data: any) => {
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      await axios.post(`${API}/wallet/deposit`, data, { headers });
+      await axios.post(`${API}/deposit`, data, { headers });
       toast.success("Deposit successful!");
       reset();
       onSuccess();
@@ -43,13 +40,17 @@ export default function DepositForm({ onSuccess }: { onSuccess: () => void }) {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <h2 className="text-lg font-semibold mb-2 text-gray-700">
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="space-y-4 w-full max-w-sm mx-auto bg-white shadow-sm border border-gray-100 p-6 rounded-2xl"
+    >
+      <h2 className="text-lg font-semibold mb-2 text-gray-700 text-center">
         Deposit Funds
       </h2>
 
+      {/* Amount Field */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-gray-700 mb-1">
           Amount
         </label>
         <input
@@ -57,35 +58,36 @@ export default function DepositForm({ onSuccess }: { onSuccess: () => void }) {
           type="number"
           step="0.01"
           placeholder="Enter amount"
-          className="w-full border rounded-md p-2"
+          className="w-full border border-purple-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
         />
         {errors.amount && (
           <p className="text-red-600 text-xs mt-1">{errors.amount.message}</p>
         )}
       </div>
 
+      {/* Narration Field */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Funding Source
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Narration
         </label>
-        <select
-          {...register("source")}
-          className="w-full border rounded-md p-2"
-        >
-          <option value="">Select source</option>
-          <option value="bank">Bank</option>
-          <option value="cash">Cash</option>
-          <option value="transfer">Transfer</option>
-        </select>
-        {errors.source && (
-          <p className="text-red-600 text-xs mt-1">{errors.source.message}</p>
+        <input
+          {...register("narration")}
+          type="text"
+          placeholder="Enter narration"
+          className="w-full border border-purple-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+        />
+        {errors.narration && (
+          <p className="text-red-600 text-xs mt-1">
+            {errors.narration.message}
+          </p>
         )}
       </div>
 
+      {/* Submit Button */}
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full bg-green-600 text-white py-2 rounded-md hover:bg-green-700 disabled:opacity-60"
+        className="w-full bg-purple-600 text-white text-sm py-2 rounded-lg hover:bg-purple-700 transition disabled:opacity-60 cursor-pointer"
       >
         {isSubmitting ? "Processing..." : "Deposit Funds"}
       </button>

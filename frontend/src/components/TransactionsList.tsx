@@ -1,6 +1,6 @@
 interface Transaction {
   id: string;
-  type: "deposit" | "withdrawal" | "transfer";
+  type: string;
   amount: number;
   created_at: string;
   status: string;

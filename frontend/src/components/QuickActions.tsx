@@ -30,7 +30,7 @@ export default function QuickActions({ refresh }: { refresh: () => void }) {
       {/* Modal logic */}
       {action && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg relative">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg relative max-w-sm mx-auto">
             <button
               onClick={() => setAction(null)}
               className="absolute right-4 top-2 text-purple-500 hover:text-purple-700 cursor-pointer"

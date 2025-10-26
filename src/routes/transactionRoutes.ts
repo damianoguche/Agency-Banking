@@ -13,7 +13,7 @@ import { payBill } from "../controllers/billController.ts";
 const router = Router();
 
 router.post("/deposit", authenticate, creditWallet);
-router.post("/withdrawal", authenticate, debitWallet);
+router.post("/withdraw", authenticate, debitWallet);
 router.post("/transfer", authenticate, transferFunds);
 router.get("/:walletId", getWalletTransactions);
 router.get(

@@ -21,10 +21,17 @@ import Outbox from "../models/outbox.ts";
 import { z } from "zod";
 import { getWalletTransactionsService } from "../services/getTransactions.ts";
 
+// Zod Schema
+export const querySchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(6)
+});
+
 interface TransferRequestBody {
   senderWalletNumber: string;
   receiverWalletNumber: string;
   amount: number | string;
+  narration: string;
 }
 
 interface CreditRequestBody {
@@ -57,6 +64,9 @@ export const creditWallet = async (
   res: Response
 ): Promise<Response> => {
   const { amount, narration } = req.body;
+
+  console.log(amount, narration);
+
   const reference = req.body.reference ?? `CR-${randomUUID()}`;
   const sequelize = Wallet.sequelize!;
 
@@ -224,9 +234,11 @@ export const transferFunds = async (
   req: Request<{}, {}, TransferRequestBody>,
   res: Response
 ): Promise<Response> => {
-  const { senderWalletNumber, receiverWalletNumber, amount } = req.body || {};
+  const { receiverWalletNumber, amount, narration } = req.body || {};
 
-  if (!senderWalletNumber || !receiverWalletNumber || !amount) {
+  const customer = (req as any).customer;
+
+  if (!receiverWalletNumber || !amount) {
     return res.status(400).json({ message: "Missing required fields" });
   }
 
@@ -238,7 +250,7 @@ export const transferFunds = async (
 
   // Start a new database transaction session and the transaction
   // object(t) reprents active transaction connection.
-  // Instead of the global sequelize instance, accessing it from
+  // Instead of the global sequelize instance, you can accessing it from
   // the model. Every Sequelize model keeps a reference to the Sequelize
   // instance that created it.
   // const t = await Wallet.sequelize!.transaction({
@@ -260,7 +272,7 @@ export const transferFunds = async (
       sequelize,
       async (t) => {
         senderWallet = await Wallet.findOne({
-          where: { walletNumber: senderWalletNumber },
+          where: { customerId: customer.id },
           transaction: t,
           lock: t.LOCK.UPDATE
         });
@@ -271,18 +283,32 @@ export const transferFunds = async (
           lock: t.LOCK.UPDATE
         });
 
+        // if (!senderWallet || !receiverWallet)
+        //   return res.status(404).json({ message: "Wallet not found" });
+
+        // if (senderWallet.id === receiverWallet.id)
+        //   return res.status(400).json("Cannot transfer to self");
+
+        // if (senderWallet.balance < amountNum)
+        //   return res.status(400).json({ message: "Insufficient funds" });
+
         if (!senderWallet || !receiverWallet)
-          return res.status(404).json({ message: "Wallet not found" });
+          throw new Error("Wallet not found");
 
         if (senderWallet.id === receiverWallet.id)
-          return res.status(400).json("Cannot transfer to self");
+          throw new Error("Cannot transfer to self");
 
         if (senderWallet.balance < amountNum)
-          return res.status(400).json({ message: "Insufficient funds" });
+          throw new Error("Insufficient funds");
 
         // Perform atomic balance updates
         senderWallet.balance -= amountNum;
-        receiverWallet.balance += amountNum;
+        await receiverWallet.increment("balance", {
+          by: amountNum,
+          transaction: t
+        });
+
+        //receiverWallet.balance += amountNum;
 
         // Persist balances AND create transaction + ledger entries inside single atomic tx
         await senderWallet.save({ transaction: t });
@@ -293,10 +319,13 @@ export const transferFunds = async (
           {
             type: Type.TRANSFER,
             amount: amountNum,
+            walletNumber: senderWallet.walletNumber,
             reference,
             senderWalletNumber: senderWallet.walletNumber,
             receiverWalletNumber: receiverWallet.walletNumber,
-            narration: `Transfer ${amountNum} from ${senderWallet.walletNumber} to ${receiverWallet.walletNumber}`
+            narration:
+              `Transfer ${amountNum} from ${senderWallet.walletNumber} to ${receiverWallet.walletNumber}` ||
+              narration
           },
           { transaction: t }
         );
@@ -336,7 +365,7 @@ export const transferFunds = async (
         reference,
         type: Type.REVERSAL,
         amount: amountNum,
-        senderWalletNumber: senderWallet!.walletNumber ?? senderWalletNumber,
+        senderWalletNumber: senderWallet!.walletNumber,
         narration: `Reversal for ${reference} - reason: ${err.message}`,
         status: Status.ROLLBACK
       });
@@ -356,8 +385,9 @@ export const transferFunds = async (
     data: {
       transaction: {
         amount,
-        from_wallet: senderWallet!.walletNumber,
-        to_wallet: receiverWallet!.walletNumber,
+        type: Type.TRANSFER,
+        senderWalletNumber: senderWallet!.walletNumber,
+        receiverWalletNumber: receiverWallet!.walletNumber,
         status: Status.COMPLETED,
         completed_at: new Date().toISOString().slice(0, 19).replace("T", " ")
       }
@@ -370,39 +400,30 @@ export const transferFunds = async (
 /**
  * Input validation
  * Correlation ID (for idempotency/traceability)
- * Atomic boundary or consistency checks (ledger mismatch risk)
  * Pagination + sorting
- * Separation of service / controller (business logic leakage)
+ * Separation of service/controller
  * Read consistency with ledger balance. Ledger consistency check
  * (balance validation)
  * Proper logging
  */
-
-const querySchema = z.object({
-  page: z
-    .string()
-    .optional()
-    .transform((v) => parseInt(v || "1")),
-  limit: z
-    .string()
-    .optional()
-    .transform((v) => parseInt(v || "20"))
-});
 
 export const getWalletTransactions = async (req: Request, res: Response) => {
   const idempotencyKey =
     req.headers["x-idempotency-key"] || crypto.randomUUID();
 
   try {
-    const { walletId } = req.params;
-    console.log(walletId);
+    const { walletNumber } = req.params;
     const { page, limit } = querySchema.parse(req.query);
 
-    if (!walletId || walletId.trim() === "") {
+    if (!walletNumber || walletNumber.trim() === "") {
       return res.status(400).json({ message: "Invalid walletId" });
     }
 
-    const result = await getWalletTransactionsService(walletId, page, limit);
+    const result = await getWalletTransactionsService(
+      walletNumber,
+      page,
+      limit
+    );
 
     res.status(200).json({
       idempotencyKey,
@@ -423,73 +444,27 @@ export const getWalletTransactions = async (req: Request, res: Response) => {
  * Retrieve recent transactions for the authenticated customer.
  * Requires the "authenticate" middleware to set req.user from JWT.
  */
-// export const getRecentTransactions = async (req: Request, res: Response) => {
-//   try {
-//     // Ensure authentication middleware set req.customer
-//     const customer = req.customer as { id: number; email: string };
-//     if (!customer || !customer.id) {
-//       return res.status(401).json({ message: "Unauthorized access." });
-//     }
-
-//     const limit = parseInt(req.query.limit as string) || 10;
-
-//     // Find user's wallet
-//     const wallet = await Wallet.findOne({
-//       where: { customerId: customer.id },
-//       attributes: ["walletNumber"]
-//     });
-
-//     if (!wallet) {
-//       return res
-//         .status(404)
-//         .json({ message: "Wallet not found for this user." });
-//     }
-
-//     // Fetch transactions
-//     const transactions = await TransactionHistory.findAll({
-//       where: { walletNumber: wallet.walletNumber },
-//       order: [["created_at", "DESC"]],
-//       limit,
-//       attributes: [
-//         "id",
-//         "walletNumber",
-//         "amount",
-//         "type",
-//         "reference",
-//         "status",
-//         "created_at"
-//       ]
-//     });
-
-//     return res.status(200).json({
-//       message: "Recent transactions retrieved successfully.",
-//       walletNumber: wallet.walletNumber,
-//       count: transactions.length,
-//       data: transactions
-//     });
-//   } catch (error: any) {
-//     console.error("Error fetching recent transactions:", error);
-//     return res.status(500).json({
-//       message: "An error occurred while fetching recent transactions.",
-//       error: error.message
-//     });
-//   }
-// };
-
 export const getRecentTransactions = async (req: Request, res: Response) => {
   try {
     const { walletNumber } = req.params;
-    const limit = parseInt(req.query.limit as string) || 10;
-
-    // Validate
-    if (!walletNumber) {
-      return res.status(400).json({ message: "Wallet number is required." });
+    if (!walletNumber || walletNumber.trim() === "") {
+      return res.status(400).json({ message: "Invalid wallet number" });
     }
 
-    // Fetch transactions
-    const transactions = await TransactionHistory.findAll({
-      where: { walletNumber },
+    // const limit = parseInt(req.query.limit as string) || 6;
+    //const page = parseInt(req.query.page as string) || 1;
+
+    // Parse pagination (Zod provides defaults)
+    const { page, limit } = querySchema.parse(req.query);
+    const offset = (page - 1) * limit;
+
+    // Fetch paginated transactions
+    const { count, rows } = await TransactionHistory.findAndCountAll({
+      where: {
+        walletNumber
+      },
       order: [["created_at", "DESC"]],
+      offset,
       limit,
       attributes: [
         "id",
@@ -503,19 +478,23 @@ export const getRecentTransactions = async (req: Request, res: Response) => {
     });
 
     // Empty result
-    if (!transactions.length) {
+    if (!rows.length) {
       return res.status(200).json({
         message: "No recent transactions found.",
         count: 0,
+        page,
+        limit,
         transactions: []
       });
     }
 
-    // Response
+    // Success
     return res.status(200).json({
       message: "Recent transactions retrieved.",
-      count: transactions.length,
-      transactions
+      count,
+      page,
+      limit,
+      transactions: rows
     });
   } catch (err: any) {
     console.error("Error fetching recent transactions:", err);
