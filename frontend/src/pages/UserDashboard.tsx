@@ -83,7 +83,6 @@ export default function UserDashboard() {
   }, [user]);
 
   // --- UI Rendering ---
-
   if (loading)
     return (
       <div className="flex h-screen items-center justify-center text-gray-600">

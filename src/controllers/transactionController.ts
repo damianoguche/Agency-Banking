@@ -1,13 +1,3 @@
-/**
- * Controllers should not handle business logic. They can be replaced
- * with another method. Controllers handle requests and delegate the
- * processing to other components.
- *
- * Keep controllers lightweight and decoupled from business logic to
- * allow for flexibility and easier replacement with alternative methods
- * or technologies.
- */
-
 import type { Request, Response } from "express";
 import Wallet from "../models/wallet.ts";
 import { withdrawal } from "../utils/debit.ts";
@@ -50,14 +40,9 @@ interface DebitRequestBody {
 }
 
 /**
- * The deposit & withdrawal workflow should:
- * - Accept an amount and transaction reference.
- * - Verify idempotency (no double processing of same reference).
- * - Execute inside a Sequelize transaction (atomic DB rollback if any
- * - step fails).
- * - Create both TransactionHistory + LedgerEntry entries.
- * - Update wallet balance.
- * - Commit only if all steps succeed.
+ * @desc Handle wallet deposir (atomic, safe retry)
+ * @route POST /api/transactions/transfer
+ * @access Private (Authenticated)
  */
 
 export const creditWallet = async (
@@ -92,7 +77,6 @@ export const creditWallet = async (
 
       if (!wallet) {
         throw new Error("Wallet not found");
-        //return res.status(404).json({ message: "Wallet not found" });
       }
 
       // Then check idempotency
@@ -170,7 +154,12 @@ export const creditWallet = async (
   }
 };
 
-// Debit Wallet Controller
+/**
+ * @desc Handle wallet withdrawl (atomic, safe retry)
+ * @route POST /api/transactions/transfer
+ * @access Private (Authenticated)
+ */
+
 export const debitWallet = async (
   req: Request<{}, {}, DebitRequestBody>,
   res: Response
@@ -306,8 +295,6 @@ export const transferFunds = async (
           transaction: t
         });
 
-        //receiverWallet.balance += amountNum;
-
         // Persist balances AND create transaction + ledger entries inside single atomic tx
         await senderWallet.save({ transaction: t });
         await receiverWallet.save({ transaction: t });
@@ -356,7 +343,6 @@ export const transferFunds = async (
       3
     );
   } catch (err: any) {
-    console.log(err.message);
     const statusCode = err?.statusCode || 500;
     try {
       // Log rollback for audit
@@ -392,16 +378,10 @@ export const transferFunds = async (
   });
 };
 
-// Get all wallet transactions
-
 /**
- * Input validation
- * Correlation ID (for idempotency/traceability)
- * Pagination + sorting
- * Separation of service/controller
- * Read consistency with ledger balance. Ledger consistency check
- * (balance validation)
- * Proper logging
+ * @desc Handle Retrieval wallet transactions
+ * @route GET /api/transactions/transfer
+ * @access Private (Authenticated)
  */
 
 export const getWalletTransactions = async (req: Request, res: Response) => {
@@ -438,8 +418,9 @@ export const getWalletTransactions = async (req: Request, res: Response) => {
 };
 
 /**
- * Retrieve recent transactions for the authenticated customer.
- * Requires the "authenticate" middleware to set req.user from JWT.
+ * @desc Handle Retrieval recent transactions
+ * @route GET /api/transactions/transfer
+ * @access Private (Authenticated)
  */
 export const getRecentTransactions = async (req: Request, res: Response) => {
   try {

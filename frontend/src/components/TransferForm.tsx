@@ -59,18 +59,6 @@ export default function TransferForm({ onSuccess }: { onSuccess: () => void }) {
     }
   };
 
-  // const onSubmit = async (data: any) => {
-  //   try {
-  //     const headers = { Authorization: `Bearer ${token}` };
-  //     await axios.post(`${API}/transfer`, data, { headers });
-  //     toast.success("Transfer successful!");
-  //     reset();
-  //     onSuccess();
-  //   } catch (err: any) {
-  //     toast.error(err?.response?.data?.message);
-  //   }
-  // };
-
   return (
     <>
       <form
