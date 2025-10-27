@@ -10,16 +10,17 @@
 
 import type { Request, Response } from "express";
 import Wallet from "../models/wallet.ts";
-import { withdrawal } from "../util/debit.ts";
+import { withdrawal } from "../utils/debit.ts";
 import TransactionHistory from "../models/transaction.ts";
 import { randomUUID } from "crypto";
 import { Status } from "../types/status.ts";
 import { Type } from "../types/transaction_types.ts";
 import { LedgerEntry } from "../models/ledger.ts";
-import { withTxRetry } from "../util/retry.ts";
+import { withTxRetry } from "../utils/retry.ts";
 import Outbox from "../models/outbox.ts";
 import { z } from "zod";
 import { getWalletTransactionsService } from "../services/getTransactions.ts";
+import { verifyPin } from "../utils/verifyPin.ts";
 
 // Zod Schema
 export const querySchema = z.object({
@@ -28,10 +29,9 @@ export const querySchema = z.object({
 });
 
 interface TransferRequestBody {
-  senderWalletNumber: string;
   receiverWalletNumber: string;
   amount: number | string;
-  narration: string;
+  narration?: string;
 }
 
 interface CreditRequestBody {
@@ -45,6 +45,7 @@ interface DebitRequestBody {
   walletNumber: string;
   narration: string;
   amount: number;
+  pin: string;
   reference: string;
 }
 
@@ -192,9 +193,30 @@ export const debitWallet = async (
     }
 
     // Validate amount
-    const { amount } = req.body;
-    if (!amount) {
-      return res.status(400).json({ message: "Enter amount" });
+    const { amount, narration, pin } = req.body;
+    if (!amount || !pin) {
+      return res.status(400).json({ message: "Amount and pin required" });
+    }
+
+    try {
+      await verifyPin(wallet.walletNumber, pin);
+    } catch (err: any) {
+      switch (err.message) {
+        case "INVALID":
+          return res.status(403).json({ message: "Authentication failed" });
+        case "LOCKED":
+          return res
+            .status(403)
+            .json({ message: "Wallet locked due to failed PIN attempts" });
+        case "NOT_FOUND":
+          return res.status(404).json({ message: "Authentication failed" });
+        case "PIN_NOT_SET":
+          return res
+            .status(403)
+            .json({ message: "Set your transaction PIN first" });
+        default:
+          return res.status(400).json({ message: "PIN verification failed" });
+      }
     }
 
     const amountNum = typeof amount === "string" ? parseFloat(amount) : amount;
@@ -207,7 +229,7 @@ export const debitWallet = async (
       Type.WITHDRAWAL,
       wallet.walletNumber,
       amountNum,
-      "Wallet debit initiated by customer"
+      narration
     );
 
     return res.status(200).json({
@@ -225,11 +247,11 @@ export const debitWallet = async (
 };
 
 /**
- * Transfer funds between wallets
- * Ensures atomicity using Sequelize transactions.
- * Commits only if both debit & credit entries succeed.
- * Logs reversals properly if rollback occurs.
+ * @desc Handle wallet-to-wallet transfer (atomic, double-entry, safe retry)
+ * @route POST /api/transactions/transfer
+ * @access Private (Authenticated)
  */
+
 export const transferFunds = async (
   req: Request<{}, {}, TransferRequestBody>,
   res: Response
@@ -248,24 +270,9 @@ export const transferFunds = async (
     return res.status(400).json({ message: "Invalid transfer amount." });
   }
 
-  // Start a new database transaction session and the transaction
-  // object(t) reprents active transaction connection.
-  // Instead of the global sequelize instance, you can accessing it from
-  // the model. Every Sequelize model keeps a reference to the Sequelize
-  // instance that created it.
-  // const t = await Wallet.sequelize!.transaction({
-  //   isolationLevel: Transaction.ISOLATION_LEVELS.READ_COMMITTED
-  // });
-
   let senderWallet, receiverWallet;
   const reference = `TX-${randomUUID()}`;
   const sequelize = Wallet.sequelize;
-
-  /**
-   * The variable t isn’t declared inside the controller, because it’s
-   * actually passed automatically into the callback by the helper function
-   * withTxRetry() — where the transaction is created.
-   */
 
   try {
     await withTxRetry(
@@ -282,15 +289,6 @@ export const transferFunds = async (
           transaction: t,
           lock: t.LOCK.UPDATE
         });
-
-        // if (!senderWallet || !receiverWallet)
-        //   return res.status(404).json({ message: "Wallet not found" });
-
-        // if (senderWallet.id === receiverWallet.id)
-        //   return res.status(400).json("Cannot transfer to self");
-
-        // if (senderWallet.balance < amountNum)
-        //   return res.status(400).json({ message: "Insufficient funds" });
 
         if (!senderWallet || !receiverWallet)
           throw new Error("Wallet not found");
@@ -324,8 +322,8 @@ export const transferFunds = async (
             senderWalletNumber: senderWallet.walletNumber,
             receiverWalletNumber: receiverWallet.walletNumber,
             narration:
-              `Transfer ${amountNum} from ${senderWallet.walletNumber} to ${receiverWallet.walletNumber}` ||
-              narration
+              narration ||
+              `Transfer ${amountNum} from ${senderWallet.walletNumber} to ${receiverWallet.walletNumber}`
           },
           { transaction: t }
         );
@@ -358,7 +356,8 @@ export const transferFunds = async (
       3
     );
   } catch (err: any) {
-    const statusCode = err?.statusCode ?? 500;
+    console.log(err.message);
+    const statusCode = err?.statusCode || 500;
     try {
       // Log rollback for audit
       await TransactionHistory.create({
@@ -374,9 +373,7 @@ export const transferFunds = async (
       console.error("Full Sequelize Error =>", err);
     }
 
-    return res
-      .status(statusCode)
-      .json({ message: "Transfer failed", error: err.message });
+    return res.status(statusCode).json({ message: err.message });
   }
 
   return res.status(200).json({

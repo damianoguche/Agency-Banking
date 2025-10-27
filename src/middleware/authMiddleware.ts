@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import { verifyToken } from "../util/jwt.ts";
+import { verifyToken } from "../utils/jwt.ts";
 import { Customer } from "../models/customer.ts";
 import type { JwtPayload } from "jsonwebtoken";
 
@@ -22,13 +22,17 @@ export async function authenticate(
 
   try {
     const decoded = verifyToken(token) as DecodedPayload;
-    const customer = await Customer.findByPk(decoded.id);
-    if (!customer)
-      return res.status(404).json({ message: "Customer not found" });
 
-    (req as any).customer = customer; // attach to request
+    const customer = await Customer.findByPk(decoded.id);
+    if (!customer) {
+      throw new Error("Customer not found");
+    }
+
+    (req as any).customer = customer;
+
     next();
-  } catch (err) {
+  } catch (err: any) {
+    console.error("Token verification failed:", err.message);
     return res.status(401).json({ message: "Invalid or expired token" });
   }
 }

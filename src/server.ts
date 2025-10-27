@@ -1,15 +1,8 @@
-process.on("uncaughtException", (err) => {
-  console.error("Uncaught Exception:", err);
-});
-
-process.on("unhandledRejection", (reason) => {
-  console.error("Unhandled Rejection:", reason);
-});
-
 import dotenv from "dotenv";
 dotenv.config();
 import express from "express";
 import cors from "cors";
+import walletRoutes from "./routes/walletRoutes.ts";
 import sequelize from "./config/db.ts";
 import adminRoutes from "./routes/adminRoutes.ts";
 import customerRoutes from "./routes/customerRoutes.ts";
@@ -47,6 +40,7 @@ app.use("/api/customers", customerRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/remediation", reconcileRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/wallet", walletRoutes);
 
 // DB connection
 (async () => {

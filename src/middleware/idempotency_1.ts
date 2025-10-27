@@ -10,7 +10,7 @@
  */
 import type { Request, Response, NextFunction } from "express";
 import IdempotencyStore from "../models/idempotencyStore.ts";
-import redis from "../util/redisClient.ts";
+import redis from "../utils/redisClient.ts";
 
 const IDEMP_TTL_SECONDS = 24 * 60 * 60; // 24 hours
 

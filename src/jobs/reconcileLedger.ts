@@ -6,7 +6,7 @@
 import { QueryTypes, Transaction } from "sequelize";
 import sequelize from "../config/db.ts";
 import { LedgerAuditLog } from "../models/ledger_audit_log.ts";
-import { sendLedgerAlert } from "../util/alerts.ts";
+import { sendLedgerAlert } from "../utils/alerts.ts";
 
 // Define a TypeScript type for the query result
 interface WalletInconsistency {

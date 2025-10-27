@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { withdrawal } from "../util/debit.ts";
+import { withdrawal } from "../utils/debit.ts";
 import Wallet from "../models/wallet.ts";
 import { Type } from "../types/transaction_types.ts";
 

@@ -3,7 +3,6 @@
     // File Layout
     "rootDir": "./src",
     "outDir": "./dist",
-    "esModuleInterop": true,
     "allowImportingTsExtensions": true,
     "typeRoots": ["./node_modules/@types", "./src/types"],
     "noEmit": true,

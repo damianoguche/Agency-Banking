@@ -15,6 +15,7 @@ export interface User {
   phone: string;
   walletNumber: string;
   role: "user" | "admin";
+  hasPin?: boolean;
 }
 
 interface AuthContextType {

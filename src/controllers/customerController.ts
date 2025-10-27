@@ -9,11 +9,11 @@
 import type { Request, Response } from "express";
 import { Customer } from "../models/customer.ts";
 import Wallet from "../models/wallet.ts";
-import { createWalletNumber } from "../util/wallet_number.ts";
+import { createWalletNumber } from "../utils/wallet_number.ts";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import type { SignOptions } from "jsonwebtoken";
-import { hashPassword } from "../util/passwordUtils.ts";
+import { hashPassword } from "../utils/passwordUtils.ts";
 import ms from "ms";
 
 /**
@@ -147,14 +147,11 @@ export const loginCustomer = async (req: Request, res: Response) => {
       attributes: ["walletNumber", "balance"]
     });
 
-    if (!wallet)
-      return res
-        .status(404)
-        .json({ message: "No wallet found for this customer." });
+    if (!wallet) return res.status(404).json({ message: "No wallet found." });
 
     // Create JWT
     const payload = { id: customer.id, email: customer.email };
-    const secret = process.env.JWT_SECRET as string;
+    const secret = (process.env.JWT_SECRET as string) || "supersecretkey";
     const expiresIn = process.env.JWT_EXPIRES_IN as ms.StringValue;
     const options: SignOptions = { expiresIn };
     const token = jwt.sign(payload, secret, options);
@@ -169,7 +166,8 @@ export const loginCustomer = async (req: Request, res: Response) => {
         email: customer.email,
         phone: customer.phoneNumber,
         role: customer.role,
-        walletNumber: wallet.walletNumber
+        walletNumber: wallet.walletNumber,
+        hasPin: !!wallet?.pinHash
       }
     });
   } catch (err: any) {
@@ -192,7 +190,13 @@ export const getMe = async (req: Request, res: Response) => {
 
     // Re-fetch with wallet association to ensure walletNumber is included
     const fullCustomer = await Customer.findByPk(customer.id, {
-      include: [{ model: Wallet, as: "wallets", attributes: ["walletNumber"] }]
+      include: [
+        {
+          model: Wallet,
+          as: "wallets",
+          attributes: ["walletNumber", "pinHash"]
+        }
+      ]
     });
 
     if (!fullCustomer) {
@@ -209,7 +213,8 @@ export const getMe = async (req: Request, res: Response) => {
       email: fullCustomer.email,
       phone: fullCustomer.phoneNumber,
       walletNumber,
-      role: fullCustomer.role
+      role: fullCustomer.role,
+      hasPin: !!wallets?.[0]?.pinHash
     });
   } catch (err) {
     return res
