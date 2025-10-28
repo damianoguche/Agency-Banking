@@ -30,7 +30,7 @@ export function PinModal({
         <div className="flex justify-end gap-3 mt-4">
           <button
             onClick={onClose}
-            className="text-gray-600 hover:text-purple-800 text-sm cursor-pointer"
+            className="bg-gray-600 hover:bg-gray-700 text-white rounded-lg px-4 py-2 hover:text-white text-sm cursor-pointer"
           >
             Cancel
           </button>

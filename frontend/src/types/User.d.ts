@@ -1,15 +1,10 @@
 export interface User {
-  id: number;
+  id: string;
   name: string;
   email: string;
-  phone?: string;
+  phone: string;
   walletNumber: string;
+  status: "active" | "suspended";
+  role: "user" | "admin";
+  hasPin?: boolean;
 }
-
-// export interface User {
-//   id: number;
-//   name: string;
-//   email: string;
-//   phone: string;
-//   wallets: { walletNumber: string; balance: number }[];
-// }

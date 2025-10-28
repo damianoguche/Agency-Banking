@@ -7,16 +7,7 @@ import {
   registerUser,
   logoutUser
 } from "../services/authService";
-
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  walletNumber: string;
-  role: "user" | "admin";
-  hasPin?: boolean;
-}
+import { User } from "@/types/User";
 
 interface AuthContextType {
   user: User | null;

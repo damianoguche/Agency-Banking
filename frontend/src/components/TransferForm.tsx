@@ -3,8 +3,8 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { useAuth } from "../hooks/useAuth";
-import { PinModal } from "./PinModal";
+import { useAuth } from "../hooks/useAuth.tsx";
+import { PinModal } from "./PinModal.tsx";
 import { useState } from "react";
 
 const schema = yup.object({
@@ -15,7 +15,7 @@ const schema = yup.object({
     .number()
     .positive("Amount must be positive")
     .required("Amount is required"),
-  narration: yup.string().max(100, "Note too long").optional()
+  narration: yup.string().max(100, "Narration too long").optional()
 });
 
 export default function TransferForm({ onSuccess }: { onSuccess: () => void }) {
@@ -115,7 +115,6 @@ export default function TransferForm({ onSuccess }: { onSuccess: () => void }) {
           />
         </div>
 
-        {/* Submit Button */}
         <button
           type="submit"
           disabled={isSubmitting}

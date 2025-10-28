@@ -27,8 +27,7 @@ export async function registerUser(
 export async function getMe(token?: string) {
   const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
   const res = await axios.get(`${API}/me`, config);
-
-  return res.data; // expected { id, name, email, role }
+  return res.data; // expected { id, name, email, role, hasPin }
 }
 
 export async function logoutUser() {

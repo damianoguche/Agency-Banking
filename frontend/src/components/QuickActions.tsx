@@ -33,7 +33,7 @@ export default function QuickActions({ refresh }: { refresh: () => void }) {
           <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg relative max-w-sm mx-auto">
             <button
               onClick={() => setAction(null)}
-              className="absolute right-4 top-2 text-purple-500 hover:text-purple-700 cursor-pointer"
+              className="absolute text-xl right-4 top-2 text-purple-500 hover:text-purple-700 cursor-pointer"
             >
               ✕
             </button>

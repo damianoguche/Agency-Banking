@@ -41,17 +41,14 @@ interface DebitRequestBody {
 
 /**
  * @desc Handle wallet deposir (atomic, safe retry)
- * @route POST /api/transactions/transfer
+ * @route POST /api/transactions/deposit
  * @access Private (Authenticated)
  */
-
 export const creditWallet = async (
   req: Request<{}, {}, CreditRequestBody>,
   res: Response
 ): Promise<Response> => {
   const { amount, narration } = req.body;
-
-  console.log(amount, narration);
 
   const reference = req.body.reference ?? `CR-${randomUUID()}`;
   const sequelize = Wallet.sequelize!;
@@ -156,10 +153,9 @@ export const creditWallet = async (
 
 /**
  * @desc Handle wallet withdrawl (atomic, safe retry)
- * @route POST /api/transactions/transfer
+ * @route POST /api/transactions/withdraw
  * @access Private (Authenticated)
  */
-
 export const debitWallet = async (
   req: Request<{}, {}, DebitRequestBody>,
   res: Response
@@ -240,7 +236,6 @@ export const debitWallet = async (
  * @route POST /api/transactions/transfer
  * @access Private (Authenticated)
  */
-
 export const transferFunds = async (
   req: Request<{}, {}, TransferRequestBody>,
   res: Response
@@ -380,10 +375,9 @@ export const transferFunds = async (
 
 /**
  * @desc Handle Retrieval wallet transactions
- * @route GET /api/transactions/transfer
+ * @route GET /api/transactions/:walletNumber/getTransactions
  * @access Private (Authenticated)
  */
-
 export const getWalletTransactions = async (req: Request, res: Response) => {
   const idempotencyKey =
     req.headers["x-idempotency-key"] || crypto.randomUUID();
@@ -418,8 +412,8 @@ export const getWalletTransactions = async (req: Request, res: Response) => {
 };
 
 /**
- * @desc Handle Retrieval recent transactions
- * @route GET /api/transactions/transfer
+ * @desc Handle Retrieval of Recent Transactions
+ * @route GET /api/transactions/:walletNumber/recentTransactions
  * @access Private (Authenticated)
  */
 export const getRecentTransactions = async (req: Request, res: Response) => {

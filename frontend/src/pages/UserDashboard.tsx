@@ -32,6 +32,7 @@ export default function UserDashboard() {
   const CxAPI = import.meta.env.VITE_CX_API_BASE;
   const TxAPI = import.meta.env.VITE_TX_API_BASE;
 
+  // Fetching User Data
   async function fetchData() {
     if (!user?.walletNumber) return;
 
@@ -79,6 +80,8 @@ export default function UserDashboard() {
         duration: 5000
       });
       setShouldPromptPin(true);
+    } else {
+      setShouldPromptPin(false);
     }
   }, [user]);
 

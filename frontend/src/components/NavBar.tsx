@@ -9,7 +9,7 @@ export default function NavBar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           <div className="flex items-center gap-6">
-            <div className="text-xl font-bold text-white">AgencyBank</div>
+            <div className="text-xl font-bold text-white">SecureBank</div>
             <nav className="hidden md:flex gap-4">
               <Link to="/" className="text-sm text-white">
                 Dashboard

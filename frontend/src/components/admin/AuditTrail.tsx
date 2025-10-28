@@ -13,12 +13,12 @@ interface Audit {
 export default function AuditTrail() {
   const { token } = useAuth();
   const [audits, setAudits] = useState<Audit[]>([]);
-  const API = import.meta.env.VITE_API_BASE || "http://localhost:4000/api";
+  const API = import.meta.env.VITE_ADM_API_BASE;
 
   async function loadAudits() {
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      const res = await axios.get(`${API}/admin/audit`, { headers });
+      const res = await axios.get(`${API}/audit`, { headers });
       setAudits(res.data.audits || []);
     } catch (err) {
       console.error("Failed to load audit trail", err);
