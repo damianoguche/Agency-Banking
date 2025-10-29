@@ -19,9 +19,13 @@ export async function authenticate(
   }
 
   const token = authHeader.split(" ")[1] as string;
+  if (!token) return res.status(401).json({ message: "Missing token" });
 
   try {
     const decoded = verifyToken(token) as DecodedPayload;
+    if (!decoded) {
+      return res.status(401).json({ message: "Invalid or expired token" });
+    }
 
     const customer = await Customer.findByPk(decoded.id);
     if (!customer) {
@@ -32,7 +36,7 @@ export async function authenticate(
 
     next();
   } catch (err: any) {
-    console.error("Token verification failed:", err.message);
-    return res.status(401).json({ message: "Invalid or expired token" });
+    console.error(err.message);
+    return res.status(401).json({ message: err.message });
   }
 }

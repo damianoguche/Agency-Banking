@@ -11,7 +11,7 @@ interface BillPaymentForm {
 }
 
 export default function BillPaymentsCard({ refresh }: { refresh: () => void }) {
-  const TxAPI = import.meta.env.VITE_TX_API_BASE;
+  const API = import.meta.env.VITE_API_BASE;
   const { token } = useAuth();
 
   const { register, handleSubmit, reset } = useForm<BillPaymentForm>();
@@ -21,7 +21,7 @@ export default function BillPaymentsCard({ refresh }: { refresh: () => void }) {
     setLoading(true);
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      await axios.post(`${TxAPI}/bills/pay`, data, { headers });
+      await axios.post(`${API}/transactions/bills/pay`, data, { headers });
       toast.success("Bill payment successful!");
       refresh();
       reset();

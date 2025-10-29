@@ -11,16 +11,20 @@ export default function UsersList({
   refresh: () => void;
 }) {
   const { token } = useAuth();
-  const API = import.meta.env.ADM_VITE_API_BASE;
+  const API = import.meta.env.VITE_API_BASE;
 
   async function changeRole(id: string, role: string) {
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      await axios.put(`${API}/customers/${id}/role`, { role }, { headers });
+      await axios.put(
+        `${API}/admin/customers/${id}/role`,
+        { role },
+        { headers }
+      );
       toast.success("Role updated");
       refresh();
-    } catch {
-      toast.error("Failed to update role");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to update role");
     }
   }
 

@@ -2,18 +2,17 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import SystemEvents from "../../components/admin/SystemEvents";
 import type { SystemEvent } from "@/types/SystemEvent";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function EventsPage() {
   const [events, setEvents] = useState<SystemEvent[]>([]);
-  const API = import.meta.env.VITE_ADM_API_BASE;
+  const API = import.meta.env.VITE_API_BASE;
+  const { token } = useAuth();
 
   const fetchEvents = async () => {
-    const res = await axios.get(`${API}/events`);
-    const data = Array.isArray(res.data)
-      ? res.data
-      : Array.isArray(res.data.events)
-      ? res.data.events
-      : [];
+    const headers = { Authorization: `Bearer ${token}` };
+    const res = await axios.get(`${API}/admin/events`, { headers });
+    const data = Array.isArray(res.data.events) ? res.data.events : [];
     setEvents(data);
   };
 

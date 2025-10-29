@@ -29,8 +29,7 @@ export default function UserDashboard() {
   const [shouldPromptPin, setShouldPromptPin] = useState(false);
 
   const limit = 6;
-  const CxAPI = import.meta.env.VITE_CX_API_BASE;
-  const TxAPI = import.meta.env.VITE_TX_API_BASE;
+  const API = import.meta.env.VITE_API_BASE;
 
   // Fetching User Data
   async function fetchData() {
@@ -43,9 +42,9 @@ export default function UserDashboard() {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
       const [balanceRes, txnRes] = await Promise.all([
-        axios.get(`${CxAPI}/${user.walletNumber}/balance`, { headers }),
+        axios.get(`${API}/customers/${user.walletNumber}/balance`, { headers }),
         axios.get(
-          `${TxAPI}/${user.walletNumber}/recentTransactions?page=${page}&limit=${limit}`,
+          `${API}/transactions/${user.walletNumber}/recentTransactions?page=${page}&limit=${limit}`,
           { headers }
         )
       ]);

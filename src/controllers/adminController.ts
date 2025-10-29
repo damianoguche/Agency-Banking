@@ -90,18 +90,17 @@ export const updateCustomerRole = async (req: Request, res: Response) => {
     // Log the role update as a system event
     await logEvent(
       "role_update",
-      `Admin updated role for ${customer.email} from '${oldRole}' to '${role}'`
+      `Admin updated role for ${customer.fullName} from '${oldRole}' to '${role}'`
     );
 
     return res.status(200).json({
       success: true,
       message: "Customer role updated"
     });
-  } catch (err) {
-    console.error("Error updating customer role:", err);
+  } catch (err: any) {
     return res.status(500).json({
       success: false,
-      message: "An error updating customer role"
+      message: err.message
     });
   }
 };

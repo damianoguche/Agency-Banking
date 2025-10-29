@@ -8,6 +8,7 @@ import {
   logoutUser
 } from "../services/authService";
 import { User } from "@/types/User";
+import { useNavigate } from "react-router-dom";
 
 interface AuthContextType {
   user: User | null;
@@ -29,6 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   // Toggle this based on your backend token flow
   const useLocalStorage = true;
@@ -94,11 +96,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  function logout() {
-    if (useLocalStorage) localStorage.removeItem("token");
-    logoutUser();
-    setUser(null);
-    setToken(null);
+  // logout is async, calls service, clears state and navigates
+  async function logout() {
+    try {
+      await logoutUser();
+    } catch (e) {
+      console.warn("Logout service failed (ignored)", e);
+    } finally {
+      localStorage.removeItem("token");
+      setUser(null);
+      setToken(null);
+      setTimeout(() => navigate("/login", { replace: true }), 50);
+    }
   }
 
   return (
@@ -112,6 +121,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuthContext() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuthContext must be used within AuthProvider");
+  if (!ctx) throw new Error("Use useAuthContext within AuthProvider");
   return ctx;
 }

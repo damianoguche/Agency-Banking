@@ -4,7 +4,8 @@ export interface User {
   email: string;
   phone: string;
   walletNumber: string;
-  status: "active" | "suspended";
+  status: "active" | "inactive";
   role: "user" | "admin";
   hasPin?: boolean;
+  created_at: Date;
 }

@@ -1,104 +1,17 @@
-// import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-// import { Toaster } from "react-hot-toast";
-// import { AuthProvider } from "./context/AuthContext.tsx";
-// import Login from "./pages/Login.tsx";
-// import Register from "./pages/Register.tsx";
-// import UserDashboard from "./pages/UserDashboard.tsx";
-// import AdminDashboard from "./pages/AdminDashboard.tsx";
-// import NavBar from "./components/NavBar.tsx";
-// import { useAuth } from "./hooks/useAuth.tsx";
-
-// /**
-//  * AuthProvider wraps your routes and how /me initializes your session
-//  * automatically.
-//  * Protected route wrapper with role-based access control
-//  * */
-
-// function ProtectedRoute({
-//   children,
-//   role
-// }: {
-//   children: React.ReactNode;
-//   role?: string;
-// }) {
-//   const { user, loading } = useAuth();
-
-//   if (loading) {
-//     return (
-//       <div className="flex items-center justify-center h-screen text-lg text-gray-600">
-//         Loading...
-//       </div>
-//     );
-//   }
-
-//   if (!user) return <Navigate to="/login" replace />;
-//   if (role && user.role !== role) return <Navigate to="/" replace />;
-
-//   return <>{children}</>;
-// }
-
-// export default function App() {
-//   return (
-//     <AuthProvider>
-//       <BrowserRouter>
-//         <div className="min-h-screen bg-gray-50 text-gray-900">
-//           <NavBar />
-//           <Toaster position="top-right" />
-
-//           <Routes>
-//             {/* Default redirect */}
-//             <Route path="/" element={<Navigate to="/dashboard" replace />} />
-
-//             <Route path="/login" element={<Login />} />
-//             <Route path="/register" element={<Register />} />
-
-//             <Route
-//               path="/dashboard"
-//               element={
-//                 <ProtectedRoute>
-//                   <UserDashboard />
-//                 </ProtectedRoute>
-//               }
-//             />
-
-//             <Route
-//               path="/admin"
-//               element={
-//                 <ProtectedRoute role="admin">
-//                   <AdminDashboard />
-//                 </ProtectedRoute>
-//               }
-//             />
-
-//             {/* Fallback */}
-//             <Route path="*" element={<Navigate to="/" replace />} />
-//           </Routes>
-//         </div>
-//       </BrowserRouter>
-//     </AuthProvider>
-//   );
-// }
-
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import { AuthProvider } from "./context/AuthContext.tsx";
-import { useAuth } from "./hooks/useAuth.tsx";
+import { AuthProvider } from "./context/AuthContext";
+import { setLogoutHandler } from "./api/axiosInstance";
+import NavBar from "./components/NavBar";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import UserDashboard from "./pages/UserDashboard";
+import AdminLayout from "./pages/admin/AdminLayout";
+import EventsPage from "./pages/admin/EventsPage";
+import UsersPage from "./pages/admin/UsersPage";
+import AuditTrailPage from "./pages/admin/AuditTrailPage";
+import { useAuth } from "./hooks/useAuth";
 
-import Login from "./pages/Login.tsx";
-import Register from "./pages/Register.tsx";
-import UserDashboard from "./pages/UserDashboard.tsx";
-import NavBar from "./components/NavBar.tsx";
-
-// 🆕 Admin layout + pages
-import AdminLayout from "./pages/admin/AdminLayout.tsx";
-import EventsPage from "./pages/admin/EventsPage.tsx";
-import UsersPage from "./pages/admin/UsersPage.tsx";
-import AuditTrailPage from "./pages/admin/AuditTrailPage.tsx";
-
-/**
- * ProtectedRoute
- * Handles authentication and role-based access
- */
 function ProtectedRoute({
   children,
   role
@@ -108,13 +21,12 @@ function ProtectedRoute({
 }) {
   const { user, loading } = useAuth();
 
-  if (loading) {
+  if (loading)
     return (
       <div className="flex items-center justify-center h-screen text-lg text-gray-600">
         Loading...
       </div>
     );
-  }
 
   if (!user) return <Navigate to="/login" replace />;
   if (role && user.role !== role) return <Navigate to="/" replace />;
@@ -122,53 +34,57 @@ function ProtectedRoute({
   return <>{children}</>;
 }
 
+// Wrap AuthProvider inside BrowserRouter
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <div className="min-h-screen bg-gray-50 text-gray-900">
-          {/* Global UI elements */}
-          <NavBar />
-          <Toaster position="top-right" />
+    <BrowserRouter>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </BrowserRouter>
+  );
+}
 
-          <Routes>
-            {/* Default redirect */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+// Inner app handles routing and logout wiring
+function AppRoutes() {
+  const { logout } = useAuth();
+  setLogoutHandler(logout);
 
-            {/* Public routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+  return (
+    <div className="min-h-screen bg-gray-50 text-gray-900">
+      <NavBar />
+      <Toaster position="top-right" />
 
-            {/* User dashboard */}
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <UserDashboard />
-                </ProtectedRoute>
-              }
-            />
+      <Routes>
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
 
-            {/* 🆕 Admin layout with nested routes */}
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute role="admin">
-                  <AdminLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Navigate to="events" replace />} />
-              <Route path="events" element={<EventsPage />} />
-              <Route path="registeredUsers" element={<UsersPage />} />
-              <Route path="auditTrail" element={<AuditTrailPage />} />
-            </Route>
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <UserDashboard />
+            </ProtectedRoute>
+          }
+        />
 
-            {/* Fallback */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </div>
-      </BrowserRouter>
-    </AuthProvider>
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute role="admin">
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="events" replace />} />
+          <Route path="events" element={<EventsPage />} />
+          <Route path="registeredUsers" element={<UsersPage />} />
+          <Route path="auditTrail" element={<AuditTrailPage />} />
+        </Route>
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </div>
   );
 }

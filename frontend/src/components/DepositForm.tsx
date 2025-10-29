@@ -1,11 +1,10 @@
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import axios from "axios";
 import toast from "react-hot-toast";
-import { useAuth } from "../hooks/useAuth";
 import { useState } from "react";
 import { PinModal } from "./PinModal";
+import api from "@/api/axiosInstance";
 
 const schema = yup.object({
   amount: yup
@@ -17,8 +16,7 @@ const schema = yup.object({
 });
 
 export default function DepositForm({ onSuccess }: { onSuccess: () => void }) {
-  const { token } = useAuth();
-  const API = import.meta.env.VITE_TX_API_BASE;
+  const API = import.meta.env.VITE_API_BASE;
 
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [pendingData, setPendingData] = useState<any>(null);
@@ -48,8 +46,8 @@ export default function DepositForm({ onSuccess }: { onSuccess: () => void }) {
     }
 
     try {
-      const headers = { Authorization: `Bearer ${token}` };
-      await axios.post(`${API}/deposit`, { ...pendingData, pin }, { headers });
+      //const headers = { Authorization: `Bearer ${token}` };
+      await api.post(`${API}/transactions/deposit`, { ...pendingData, pin });
       toast.success("Deposit successful!");
       reset();
       onSuccess();
@@ -57,18 +55,6 @@ export default function DepositForm({ onSuccess }: { onSuccess: () => void }) {
       toast.error(err?.response?.data?.message || "Deposit failed");
     }
   };
-
-  // const onSubmit = async (data: any) => {
-  //   try {
-  //     const headers = { Authorization: `Bearer ${token}` };
-  //     await axios.post(`${API}/deposit`, data, { headers });
-  //     toast.success("Deposit successful!");
-  //     reset();
-  //     onSuccess();
-  //   } catch (err: any) {
-  //     toast.error(err?.response?.data?.message || "Deposit failed");
-  //   }
-  // };
 
   return (
     <>

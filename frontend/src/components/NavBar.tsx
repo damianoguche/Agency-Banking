@@ -3,7 +3,7 @@ import { useAuth } from "../hooks/useAuth.tsx";
 
 export default function NavBar() {
   const { user, logout } = useAuth();
-  const nav = useNavigate();
+
   return (
     <header className="bg-purple-800 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -30,7 +30,6 @@ export default function NavBar() {
                 <button
                   onClick={() => {
                     logout();
-                    nav("/login");
                   }}
                   className="px-3 py-1 border rounded text-white cursor-pointer"
                 >

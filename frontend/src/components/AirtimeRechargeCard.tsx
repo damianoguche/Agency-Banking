@@ -17,7 +17,7 @@ export default function AirtimeRechargeCard({
 }) {
   const { register, handleSubmit, reset } = useForm<AirtimeForm>();
   const [loading, setLoading] = useState(false);
-  const TxAPI = import.meta.env.VITE_TX_API_BASE;
+  const API = import.meta.env.VITE_API_BASE;
 
   const { token } = useAuth();
 
@@ -25,7 +25,9 @@ export default function AirtimeRechargeCard({
     setLoading(true);
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      await axios.post(`${TxAPI}/airtime/recharge`, data, { headers });
+      await axios.post(`${API}/transactions/airtime/recharge`, data, {
+        headers
+      });
       toast.success("Airtime recharge successful!");
       refresh();
       reset();

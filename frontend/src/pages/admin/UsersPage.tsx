@@ -6,13 +6,13 @@ import { useAuth } from "@/hooks/useAuth.tsx";
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
-  const API = import.meta.env.VITE_ADM_API_BASE;
+  const API = import.meta.env.VITE_API_BASE;
   const { token } = useAuth();
 
   const fetchUsers = async () => {
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      const res = await axios.get(`${API}/customers`, { headers });
+      const res = await axios.get(`${API}/admin/customers`, { headers });
 
       const data = Array.isArray(res.data.customers) ? res.data.customers : [];
       setUsers(data);

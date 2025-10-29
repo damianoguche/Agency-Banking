@@ -2,10 +2,9 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import axios from "axios";
 import toast from "react-hot-toast";
-import { useAuth } from "../hooks/useAuth";
 import { PinModal } from "./PinModal";
+import api from "@/api/axiosInstance";
 
 // Validation Schema
 const schema = yup.object({
@@ -18,8 +17,7 @@ const schema = yup.object({
 });
 
 export default function WithdrawForm({ onSuccess }: { onSuccess: () => void }) {
-  const { token } = useAuth();
-  const API = import.meta.env.VITE_TX_API_BASE;
+  const API = import.meta.env.VITE_API_BASE;
 
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [pendingData, setPendingData] = useState<any>(null);
@@ -49,8 +47,7 @@ export default function WithdrawForm({ onSuccess }: { onSuccess: () => void }) {
     }
 
     try {
-      const headers = { Authorization: `Bearer ${token}` };
-      await axios.post(`${API}/withdraw`, { ...pendingData, pin }, { headers });
+      await api.post(`${API}/transactions/withdraw`, { ...pendingData, pin });
       toast.success("Withdrawal successful!");
       reset();
       onSuccess();

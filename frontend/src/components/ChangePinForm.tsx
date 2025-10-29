@@ -26,6 +26,8 @@ export default function ChangePinForm({
     formState: { errors, isSubmitting }
   } = useForm<ChangePinFields>();
 
+  const API = import.meta.env.VITE_API_BASE;
+
   const onSubmit = async (data: ChangePinFields) => {
     if (data.newPin !== data.confirmPin) {
       toast.error("New PINs do not match");
@@ -33,15 +35,15 @@ export default function ChangePinForm({
     }
 
     try {
-      await axios.post("/api/wallet/change-pin", {
+      await axios.post(`${API}/wallet/change-pin`, {
         walletNumber,
         oldPin: data.oldPin,
         newPin: data.newPin
       });
-      toast.success("PIN changed successfully");
+      toast.success("Transaction PIN changed");
       onSuccess?.();
     } catch (err: any) {
-      const msg = err.response?.data?.message || "Failed to change PIN";
+      const msg = err.response?.data?.message || "PIN change failed";
       toast.error(msg);
     }
   };

@@ -38,14 +38,14 @@ export default function SetPinForm({
     try {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       await axios.post(
-        `${API}/set-pin`,
+        `${API}/wallet/set-pin`,
         {
           walletNumber,
           pin: data.pin
         },
         { headers }
       );
-      toast.success("Transaction PIN set successfully");
+      toast.success("Transaction PIN set");
       onSuccess?.();
     } catch (err: any) {
       const msg = err.response?.data?.message || "Failed to set PIN";

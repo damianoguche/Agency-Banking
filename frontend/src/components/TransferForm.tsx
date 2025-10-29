@@ -1,11 +1,10 @@
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import axios from "axios";
 import toast from "react-hot-toast";
-import { useAuth } from "../hooks/useAuth.tsx";
 import { PinModal } from "./PinModal.tsx";
 import { useState } from "react";
+import api from "@/api/axiosInstance.ts";
 
 const schema = yup.object({
   receiverWalletNumber: yup
@@ -19,8 +18,7 @@ const schema = yup.object({
 });
 
 export default function TransferForm({ onSuccess }: { onSuccess: () => void }) {
-  const { token } = useAuth();
-  const API = import.meta.env.VITE_TX_API_BASE;
+  const API = import.meta.env.VITE_API_BASE;
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [pendingData, setPendingData] = useState<any>(null);
 
@@ -49,8 +47,7 @@ export default function TransferForm({ onSuccess }: { onSuccess: () => void }) {
     }
 
     try {
-      const headers = { Authorization: `Bearer ${token}` };
-      await axios.post(`${API}/transfer`, { ...pendingData, pin }, { headers });
+      await api.post(`${API}/transactions/transfer`, { ...pendingData, pin });
       toast.success("Transfer successful!");
       reset();
       onSuccess();

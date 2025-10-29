@@ -48,7 +48,7 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterInputs) => {
     try {
       await registerUser(data.name, data.phone, data.email, data.password);
-      toast.success("Account created successfully!");
+      toast.success("Account created!");
       navigate("/dashboard");
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Registration failed");
