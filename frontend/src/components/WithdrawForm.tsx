@@ -5,6 +5,7 @@ import * as yup from "yup";
 import toast from "react-hot-toast";
 import { PinModal } from "./PinModal";
 import api from "@/api/axiosInstance";
+import { useAuth } from "@/hooks/useAuth";
 
 // Validation Schema
 const schema = yup.object({
@@ -22,6 +23,8 @@ export default function WithdrawForm({ onSuccess }: { onSuccess: () => void }) {
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [pendingData, setPendingData] = useState<any>(null);
 
+  const { user } = useAuth();
+
   const {
     register,
     handleSubmit,
@@ -33,6 +36,10 @@ export default function WithdrawForm({ onSuccess }: { onSuccess: () => void }) {
 
   // Open modal before sending request
   const handleFormSubmit = (data: any) => {
+    if (!user?.hasPin) {
+      toast.error("Please set a transaction PIN");
+      return;
+    }
     setPendingData(data);
     setIsPinModalOpen(true);
   };

@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { useState } from "react";
 import { PinModal } from "./PinModal";
 import api from "@/api/axiosInstance";
+import { useAuth } from "@/hooks/useAuth";
 
 const schema = yup.object({
   amount: yup
@@ -21,6 +22,8 @@ export default function DepositForm({ onSuccess }: { onSuccess: () => void }) {
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [pendingData, setPendingData] = useState<any>(null);
 
+  const { user } = useAuth();
+
   const {
     register,
     handleSubmit,
@@ -32,6 +35,13 @@ export default function DepositForm({ onSuccess }: { onSuccess: () => void }) {
 
   // Open modal before sending request
   const handleFormSubmit = (data: any) => {
+    if (!user?.hasPin) {
+      toast.error("Please set a transaction PIN", {
+        icon: "🔐",
+        duration: 3000
+      });
+      return;
+    }
     setPendingData(data);
     setIsPinModalOpen(true);
   };

@@ -2,7 +2,6 @@ import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useAuth } from "@/hooks/useAuth";
 import api from "@/api/axiosInstance";
 
 interface SetPinFormProps {

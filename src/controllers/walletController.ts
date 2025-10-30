@@ -29,9 +29,7 @@ export const setPin = async (req: Request, res: Response) => {
 
     await wallet.save();
 
-    return res
-      .status(200)
-      .json({ message: "Transaction PIN set successfully" });
+    return res.status(200).json({ message: "Transaction PIN set" });
   } catch (err) {
     console.error("Error in setPin:", err);
     return res.status(500).json({ message: "Failed to set PIN" });

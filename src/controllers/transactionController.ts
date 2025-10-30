@@ -11,6 +11,7 @@ import Outbox from "../models/outbox.ts";
 import { z } from "zod";
 import { getWalletTransactionsService } from "../services/getTransactions.ts";
 import { verifyPin } from "../utils/verifyPin.ts";
+import { AppError } from "../utils/errors.ts";
 
 // Zod Schema
 export const querySchema = z.object({
@@ -22,12 +23,14 @@ interface TransferRequestBody {
   receiverWalletNumber: string;
   amount: number | string;
   narration?: string;
+  pin: string;
 }
 
 interface CreditRequestBody {
   walletNumber: string;
   narration: string;
   amount: number;
+  pin: string;
   reference: string;
 }
 
@@ -48,7 +51,7 @@ export const creditWallet = async (
   req: Request<{}, {}, CreditRequestBody>,
   res: Response
 ): Promise<Response> => {
-  const { amount, narration } = req.body;
+  const { amount, narration, pin } = req.body;
 
   const reference = req.body.reference ?? `CR-${randomUUID()}`;
   const sequelize = Wallet.sequelize!;
@@ -73,7 +76,28 @@ export const creditWallet = async (
       });
 
       if (!wallet) {
-        throw new Error("Wallet not found");
+        throw new AppError("Wallet not found", 404);
+      }
+
+      try {
+        await verifyPin(wallet.walletNumber, pin);
+      } catch (err: any) {
+        switch (err.message) {
+          case "INVALID":
+            return res.status(403).json({ message: "Authentication failed" });
+          case "LOCKED":
+            return res
+              .status(403)
+              .json({ message: "Wallet locked due to failed PIN attempts" });
+          case "NOT_FOUND":
+            return res.status(404).json({ message: "Authentication failed" });
+          case "PIN_NOT_SET":
+            return res
+              .status(403)
+              .json({ message: "Set transaction PIN first" });
+          default:
+            return res.status(400).json({ message: "PIN verification failed" });
+        }
       }
 
       // Then check idempotency
@@ -196,9 +220,7 @@ export const debitWallet = async (
         case "NOT_FOUND":
           return res.status(404).json({ message: "Authentication failed" });
         case "PIN_NOT_SET":
-          return res
-            .status(403)
-            .json({ message: "Set your transaction PIN first" });
+          return res.status(403).json({ message: "Set transaction PIN first" });
         default:
           return res.status(400).json({ message: "PIN verification failed" });
       }
@@ -240,7 +262,7 @@ export const transferFunds = async (
   req: Request<{}, {}, TransferRequestBody>,
   res: Response
 ): Promise<Response> => {
-  const { receiverWalletNumber, amount, narration } = req.body || {};
+  const { receiverWalletNumber, amount, narration, pin } = req.body || {};
 
   const customer = (req as any).customer;
 
@@ -267,6 +289,29 @@ export const transferFunds = async (
           transaction: t,
           lock: t.LOCK.UPDATE
         });
+
+        try {
+          await verifyPin(senderWallet!.walletNumber, pin);
+        } catch (err: any) {
+          switch (err.message) {
+            case "INVALID":
+              return res.status(403).json({ message: "Authentication failed" });
+            case "LOCKED":
+              return res
+                .status(403)
+                .json({ message: "Wallet locked due to failed PIN attempts" });
+            case "NOT_FOUND":
+              return res.status(404).json({ message: "Authentication failed" });
+            case "PIN_NOT_SET":
+              return res
+                .status(403)
+                .json({ message: "Set transaction PIN first" });
+            default:
+              return res
+                .status(400)
+                .json({ message: "PIN verification failed" });
+          }
+        }
 
         receiverWallet = await Wallet.findOne({
           where: { walletNumber: receiverWalletNumber },
