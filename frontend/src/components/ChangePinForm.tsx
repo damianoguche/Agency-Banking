@@ -1,8 +1,8 @@
 import { useForm } from "react-hook-form";
-import axios from "axios";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import api from "@/api/axiosInstance";
 
 interface ChangePinFormProps {
   walletNumber: string;
@@ -35,7 +35,7 @@ export default function ChangePinForm({
     }
 
     try {
-      await axios.post(`${API}/wallet/change-pin`, {
+      await api.post(`${API}/wallet/change-pin`, {
         walletNumber,
         oldPin: data.oldPin,
         newPin: data.newPin

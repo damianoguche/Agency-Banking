@@ -144,7 +144,7 @@ export const loginCustomer = async (req: Request, res: Response) => {
     // Get wallet for this customer
     const wallet = await Wallet.findOne({
       where: { customerId: customer.id },
-      attributes: ["walletNumber", "balance"]
+      attributes: ["walletNumber", "balance", "pinHash"]
     });
 
     if (!wallet) return res.status(404).json({ message: "No wallet found." });

@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
-import { useAuth } from "../../hooks/useAuth";
+import api from "@/api/axiosInstance";
 
 interface Audit {
   id: string;
@@ -11,14 +10,12 @@ interface Audit {
 }
 
 export default function AuditTrail() {
-  const { token } = useAuth();
   const [audits, setAudits] = useState<Audit[]>([]);
   const API = import.meta.env.VITE_API_BASE;
 
   async function loadAudits() {
     try {
-      const headers = { Authorization: `Bearer ${token}` };
-      const res = await axios.get(`${API}/admin/audit`, { headers });
+      const res = await api.get(`${API}/admin/audit`);
       setAudits(res.data.audits || []);
     } catch (err) {
       console.error("Failed to load audit trail", err);

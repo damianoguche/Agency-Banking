@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import toast from "react-hot-toast";
 import { useAuth } from "../hooks/useAuth";
 import BalanceCard from "../components/BalanceCard.tsx";
@@ -8,6 +7,7 @@ import TransactionsList from "../components/TransactionsList.tsx";
 import AirtimeRechargeCard from "../components/AirtimeRechargeCard.tsx";
 import BillPaymentsCard from "../components/BillPaymentsCard.tsx";
 import PinManager from "../components/PinManager.tsx";
+import api from "@/api/axiosInstance.ts";
 
 interface Transaction {
   id: string;
@@ -19,7 +19,7 @@ interface Transaction {
 }
 
 export default function UserDashboard() {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const [balance, setBalance] = useState<number>(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,6 +30,7 @@ export default function UserDashboard() {
 
   const limit = 6;
   const API = import.meta.env.VITE_API_BASE;
+  console.log(user);
 
   // Fetching User Data
   async function fetchData() {
@@ -39,13 +40,10 @@ export default function UserDashboard() {
     setError(null);
 
     try {
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
       const [balanceRes, txnRes] = await Promise.all([
-        axios.get(`${API}/customers/${user.walletNumber}/balance`, { headers }),
-        axios.get(
-          `${API}/transactions/${user.walletNumber}/recentTransactions?page=${page}&limit=${limit}`,
-          { headers }
+        api.get(`${API}/customers/${user.walletNumber}/balance`),
+        api.get(
+          `${API}/transactions/${user.walletNumber}/recentTransactions?page=${page}&limit=${limit}`
         )
       ]);
 
@@ -75,14 +73,12 @@ export default function UserDashboard() {
   // Onboarding check – prompt if PIN missing
   useEffect(() => {
     if (user && user.hasPin === false) {
-      toast("Please set your transaction PIN.", {
-        duration: 5000
-      });
+      toast("Please set your transaction PIN.", { icon: "🔐", duration: 3000 });
       setShouldPromptPin(true);
     } else {
       setShouldPromptPin(false);
     }
-  }, [user]);
+  }, [user?.hasPin]);
 
   // --- UI Rendering ---
   if (loading)

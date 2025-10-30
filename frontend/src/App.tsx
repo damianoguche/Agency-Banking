@@ -48,6 +48,7 @@ export default function App() {
 // Inner app handles routing and logout wiring
 function AppRoutes() {
   const { logout } = useAuth();
+  // App.tsx ensures the connection is made when the app mounts.
   setLogoutHandler(logout);
 
   return (

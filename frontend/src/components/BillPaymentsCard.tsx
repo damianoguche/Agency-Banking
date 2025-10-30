@@ -45,7 +45,7 @@ export default function BillPaymentsCard({ refresh }: { refresh: () => void }) {
         {/* Bill Type Select */}
         <select
           {...register("billType", { required: true })}
-          className="border border-purple-300 rounded-lg px-3 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+          className="border border-purple-300 rounded-lg px-3 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-purple-500 bg-purple-100"
         >
           <option value="">Select Bill Type</option>
           <option value="electricity">Electricity</option>
@@ -55,7 +55,7 @@ export default function BillPaymentsCard({ refresh }: { refresh: () => void }) {
           <option value="waste">Waste Disposal</option>
         </select>
 
-        {/* Account / Meter Number */}
+        {/* Account/Meter Number */}
         <input
           {...register("account", { required: true })}
           type="text"

@@ -106,7 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem("token");
       setUser(null);
       setToken(null);
-      setTimeout(() => navigate("/login", { replace: true }), 50);
+      navigate("/login", { replace: true });
     }
   }
 

@@ -1,7 +1,6 @@
-import axios from "axios";
 import toast from "react-hot-toast";
-import { useAuth } from "../../hooks/useAuth";
 import { User } from "@/types/User";
+import api from "@/api/axiosInstance";
 
 export default function UsersList({
   users,
@@ -10,17 +9,11 @@ export default function UsersList({
   users: User[];
   refresh: () => void;
 }) {
-  const { token } = useAuth();
   const API = import.meta.env.VITE_API_BASE;
 
   async function changeRole(id: string, role: string) {
     try {
-      const headers = { Authorization: `Bearer ${token}` };
-      await axios.put(
-        `${API}/admin/customers/${id}/role`,
-        { role },
-        { headers }
-      );
+      await api.put(`${API}/admin/customers/${id}/role`, { role });
       toast.success("Role updated");
       refresh();
     } catch (err: any) {
