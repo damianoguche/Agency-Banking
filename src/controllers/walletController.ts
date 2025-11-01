@@ -86,7 +86,7 @@ export const changePin = async (req: Request, res: Response) => {
 // PIN Reset
 export async function resetPin(req: Request, res: Response) {
   const customer = (req as any).customer;
-  const { walletNumber, newPin } = req.body;
+  const { walletNumber } = req.params;
 
   const wallet = await Wallet.findOne({
     where: { walletNumber, customerId: customer.id }
@@ -96,11 +96,11 @@ export async function resetPin(req: Request, res: Response) {
     return res.status(404).json({ message: "Wallet not found" });
   }
 
-  wallet.pinHash = await bcrypt.hash(newPin, 12);
+  wallet.pinHash = null;
   wallet.pinAttempts = 0;
   wallet.isLocked = false;
 
   await wallet.save();
 
-  return res.status(200).json({ message: "PIN reset successfully" });
+  return res.status(200).json({ message: "PIN reset successful" });
 }

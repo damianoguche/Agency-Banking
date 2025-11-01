@@ -13,7 +13,7 @@ interface WalletAttributes {
   currency: Currency;
   customerId: number;
   walletType: WalletType;
-  pinHash: string;
+  pinHash: string | null;
   pinAttempts: number;
   isLocked: boolean;
   created_at?: Date;
@@ -43,7 +43,7 @@ class Wallet
   declare currency: Currency;
   declare customerId: number;
   declare walletType: WalletType;
-  declare pinHash: string;
+  declare pinHash: string | null;
   declare pinAttempts: number;
   declare isLocked: boolean;
   declare readonly created_at?: Date;

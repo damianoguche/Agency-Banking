@@ -47,76 +47,43 @@ interface DebitRequestBody {
  * @route POST /api/transactions/deposit
  * @access Private (Authenticated)
  */
+
 export const creditWallet = async (
   req: Request<{}, {}, CreditRequestBody>,
   res: Response
 ): Promise<Response> => {
   const { amount, narration, pin } = req.body;
-
   const reference = req.body.reference ?? `CR-${randomUUID()}`;
   const sequelize = Wallet.sequelize!;
-
   const customer = (req as any).customer;
 
-  if (!amount) return res.status(400).json({ message: "Enter amount" });
-
   const amountNum = typeof amount === "string" ? parseFloat(amount) : amount;
-
-  if (isNaN(amountNum) || amountNum <= 0) {
+  if (isNaN(amountNum) || amountNum <= 0)
     return res.status(400).json({ message: "Invalid amount entered." });
-  }
 
   try {
+    // Verify PIN *outside* transaction (read-only)
+    const walletForPin = await Wallet.findOne({
+      where: { customerId: customer.id }
+    });
+
+    if (!walletForPin) throw new AppError("Wallet not found", 404);
+    await verifyPin(walletForPin.walletNumber, pin);
+
+    // Perform all writes atomically
     await withTxRetry(sequelize, async (t) => {
-      // Always lock Wallet first
       const wallet = await Wallet.findOne({
         where: { customerId: customer.id },
         transaction: t,
         lock: t.LOCK.UPDATE
       });
 
-      if (!wallet) {
-        throw new AppError("Wallet not found", 404);
-      }
+      if (!wallet) throw new Error("Wallet not found");
 
-      try {
-        await verifyPin(wallet.walletNumber, pin);
-      } catch (err: any) {
-        switch (err.message) {
-          case "INVALID":
-            return res.status(403).json({ message: "Authentication failed" });
-          case "LOCKED":
-            return res
-              .status(403)
-              .json({ message: "Wallet locked due to failed PIN attempts" });
-          case "NOT_FOUND":
-            return res.status(404).json({ message: "Authentication failed" });
-          case "PIN_NOT_SET":
-            return res
-              .status(403)
-              .json({ message: "Set transaction PIN first" });
-          default:
-            return res.status(400).json({ message: "PIN verification failed" });
-        }
-      }
+      await verifyPin(wallet.walletNumber, pin);
 
-      // Then check idempotency
-      const existing = await TransactionHistory.findOne({
-        where: { reference },
-        transaction: t,
-        lock: t.LOCK.UPDATE
-      });
-
-      if (existing) {
-        return res
-          .status(400)
-          .json({ message: "Already processed", reference });
-      }
-
-      // Atomic increment
-      await wallet.increment("balance", { by: amount, transaction: t });
-
-      await TransactionHistory.create(
+      // Create transaction record first
+      const txn = await TransactionHistory.create(
         {
           type: Type.DEPOSIT,
           amount: amountNum,
@@ -128,44 +95,43 @@ export const creditWallet = async (
         { transaction: t }
       );
 
+      // Now create the ledger entry, using txn.reference
       await LedgerEntry.create(
         {
-          transaction_reference: reference,
+          transaction_reference: txn.reference,
           wallet_number: wallet.walletNumber,
           entry_type: "CREDIT",
-          amount
+          amount: amountNum
         },
         { transaction: t }
       );
 
+      // Update wallet last
+      await wallet.increment("balance", { by: amountNum, transaction: t });
+
       await Outbox.create(
         {
           aggregate_type: "Transaction",
-          aggregate_id: reference,
+          aggregate_id: txn.reference,
           event_type: "WalletCredited",
           payload: {
-            reference,
-            wallNumber: wallet.walletNumber,
-            amount,
+            reference: txn.reference,
+            walletNumber: wallet.walletNumber,
+            amount: amountNum,
             type: Type.DEPOSIT
           },
           published: false
         },
         { transaction: t }
       );
-
-      return wallet;
     });
 
-    return res.status(200).json({
-      message: "Wallet credited"
-    });
+    return res.status(200).json({ message: "Wallet credited" });
   } catch (err: any) {
-    // Write reversal record for audit
     await TransactionHistory.create({
       reference: `${reference}-R`,
       type: Type.REVERSAL,
-      amount,
+      amount: amountNum,
       narration: `Reversal for ${reference}: ${err.message}`,
       status: Status.ROLLBACK
     });
@@ -184,57 +150,35 @@ export const debitWallet = async (
   req: Request<{}, {}, DebitRequestBody>,
   res: Response
 ): Promise<Response> => {
+  const customer = (req as any).customer;
+  // Validate authenticated customer
+  if (!customer?.id) {
+    return res.status(401).json({ message: "Unauthorized access" });
+  }
+
+  // Validate amount
+  const { amount, narration, pin } = req.body;
+  if (!amount || !pin) {
+    return res.status(400).json({ message: "Amount and pin required" });
+  }
+
+  const amountNum = typeof amount === "string" ? parseFloat(amount) : amount;
+  if (isNaN(amountNum) || amountNum <= 0) {
+    return res.status(400).json({ message: "Invalid amount entered" });
+  }
+
   try {
-    const customer = (req as any).customer;
-
-    // Validate authenticated customer
-    if (!customer?.id) {
-      return res.status(401).json({ message: "Unauthorized access" });
-    }
-
-    // Fetch wallet
-    const wallet = await Wallet.findOne({
+    const walletForPin = await Wallet.findOne({
       where: { customerId: customer.id }
     });
 
-    if (!wallet) {
-      return res.status(404).json({ message: "Wallet not found" });
-    }
-
-    // Validate amount
-    const { amount, narration, pin } = req.body;
-    if (!amount || !pin) {
-      return res.status(400).json({ message: "Amount and pin required" });
-    }
-
-    try {
-      await verifyPin(wallet.walletNumber, pin);
-    } catch (err: any) {
-      switch (err.message) {
-        case "INVALID":
-          return res.status(403).json({ message: "Authentication failed" });
-        case "LOCKED":
-          return res
-            .status(403)
-            .json({ message: "Wallet locked due to failed PIN attempts" });
-        case "NOT_FOUND":
-          return res.status(404).json({ message: "Authentication failed" });
-        case "PIN_NOT_SET":
-          return res.status(403).json({ message: "Set transaction PIN first" });
-        default:
-          return res.status(400).json({ message: "PIN verification failed" });
-      }
-    }
-
-    const amountNum = typeof amount === "string" ? parseFloat(amount) : amount;
-    if (isNaN(amountNum) || amountNum <= 0) {
-      return res.status(400).json({ message: "Invalid amount entered" });
-    }
+    if (!walletForPin) throw new AppError("Wallet not found", 404);
+    await verifyPin(walletForPin.walletNumber, pin);
 
     // Perform withdrawal
     const { txn, wallet: updatedWallet } = await withdrawal(
       Type.WITHDRAWAL,
-      wallet.walletNumber,
+      walletForPin.walletNumber,
       amountNum,
       narration
     );
@@ -246,10 +190,14 @@ export const debitWallet = async (
     });
   } catch (err: any) {
     const msg =
-      err.message === "Wallet not found" || err.message === "Insufficient funds"
+      err.message === "Wallet not found" ||
+      err.message === "Wallet locked due to failed PIN attempts" ||
+      err.message === "Insufficient funds" ||
+      err.message === "Invalid Transaction PIN"
         ? err.message
         : "Transaction failed";
-    return res.status(400).json({ message: msg });
+    const statusCode = err.statusCode ?? 500;
+    return res.status(statusCode).json({ message: msg });
   }
 };
 
@@ -281,107 +229,79 @@ export const transferFunds = async (
   const sequelize = Wallet.sequelize;
 
   try {
-    await withTxRetry(
-      sequelize,
-      async (t) => {
-        senderWallet = await Wallet.findOne({
-          where: { customerId: customer.id },
-          transaction: t,
-          lock: t.LOCK.UPDATE
-        });
+    await withTxRetry(sequelize, async (t) => {
+      senderWallet = await Wallet.findOne({
+        where: { customerId: customer.id },
+        transaction: t,
+        lock: t.LOCK.UPDATE
+      });
 
-        try {
-          await verifyPin(senderWallet!.walletNumber, pin);
-        } catch (err: any) {
-          switch (err.message) {
-            case "INVALID":
-              return res.status(403).json({ message: "Authentication failed" });
-            case "LOCKED":
-              return res
-                .status(403)
-                .json({ message: "Wallet locked due to failed PIN attempts" });
-            case "NOT_FOUND":
-              return res.status(404).json({ message: "Authentication failed" });
-            case "PIN_NOT_SET":
-              return res
-                .status(403)
-                .json({ message: "Set transaction PIN first" });
-            default:
-              return res
-                .status(400)
-                .json({ message: "PIN verification failed" });
-          }
-        }
+      receiverWallet = await Wallet.findOne({
+        where: { walletNumber: receiverWalletNumber },
+        transaction: t,
+        lock: t.LOCK.UPDATE
+      });
 
-        receiverWallet = await Wallet.findOne({
-          where: { walletNumber: receiverWalletNumber },
-          transaction: t,
-          lock: t.LOCK.UPDATE
-        });
+      if (!senderWallet || !receiverWallet) throw new Error("Wallet not found");
+      if (senderWallet.id === receiverWallet.id)
+        throw new Error("Cannot transfer to self");
+      if (senderWallet.balance < amountNum)
+        throw new Error("Insufficient funds");
 
-        if (!senderWallet || !receiverWallet)
-          throw new Error("Wallet not found");
+      await verifyPin(senderWallet!.walletNumber, pin);
 
-        if (senderWallet.id === receiverWallet.id)
-          throw new Error("Cannot transfer to self");
+      // Perform atomic balance updates
+      senderWallet.balance -= amountNum;
+      await receiverWallet.increment("balance", {
+        by: amountNum,
+        transaction: t
+      });
 
-        if (senderWallet.balance < amountNum)
-          throw new Error("Insufficient funds");
+      // Persist balances AND create transaction + ledger entries inside single atomic tx
+      await senderWallet.save({ transaction: t });
+      await receiverWallet.save({ transaction: t });
 
-        // Perform atomic balance updates
-        senderWallet.balance -= amountNum;
-        await receiverWallet.increment("balance", {
-          by: amountNum,
-          transaction: t
-        });
+      // Create Master transaction
+      const tx = await TransactionHistory.create(
+        {
+          type: Type.TRANSFER,
+          amount: amountNum,
+          walletNumber: senderWallet.walletNumber,
+          reference,
+          senderWalletNumber: senderWallet.walletNumber,
+          receiverWalletNumber: receiverWallet.walletNumber,
+          narration:
+            narration ||
+            `Transfer ${amountNum} from ${senderWallet.walletNumber} to ${receiverWallet.walletNumber}`
+        },
+        { transaction: t }
+      );
 
-        // Persist balances AND create transaction + ledger entries inside single atomic tx
-        await senderWallet.save({ transaction: t });
-        await receiverWallet.save({ transaction: t });
-
-        // Create Master transaction
-        const tx = await TransactionHistory.create(
+      // Create ledger entries (double entry)
+      await LedgerEntry.bulkCreate(
+        [
           {
-            type: Type.TRANSFER,
-            amount: amountNum,
-            walletNumber: senderWallet.walletNumber,
-            reference,
-            senderWalletNumber: senderWallet.walletNumber,
-            receiverWalletNumber: receiverWallet.walletNumber,
-            narration:
-              narration ||
-              `Transfer ${amountNum} from ${senderWallet.walletNumber} to ${receiverWallet.walletNumber}`
+            transaction_reference: reference,
+            wallet_number: senderWallet.walletNumber,
+            entry_type: "DEBIT",
+            amount: amountNum
           },
-          { transaction: t }
-        );
+          {
+            transaction_reference: reference,
+            wallet_number: receiverWallet.walletNumber,
+            entry_type: "CREDIT",
+            amount: amountNum
+          }
+        ],
+        { transaction: t }
+      );
 
-        // Create ledger entries (double entry)
-        await LedgerEntry.bulkCreate(
-          [
-            {
-              transaction_reference: reference,
-              wallet_number: senderWallet.walletNumber,
-              entry_type: "DEBIT",
-              amount: amountNum
-            },
-            {
-              transaction_reference: reference,
-              wallet_number: receiverWallet.walletNumber,
-              entry_type: "CREDIT",
-              amount: amountNum
-            }
-          ],
-          { transaction: t }
-        );
+      // Mark transaction success
+      await tx.update({ status: Status.SUCCESSFUL }, { transaction: t });
 
-        // Mark transaction success
-        await tx.update({ status: Status.SUCCESSFUL }, { transaction: t });
-
-        // commit happens in withTxRetry wrapper
-        return;
-      },
-      3
-    );
+      // commit happens in withTxRetry wrapper
+      return;
+    });
   } catch (err: any) {
     const statusCode = err?.statusCode || 500;
     try {

@@ -7,6 +7,7 @@ import TransactionsList from "../components/TransactionsList.tsx";
 import AirtimeRechargeCard from "../components/AirtimeRechargeCard.tsx";
 import BillPaymentsCard from "../components/BillPaymentsCard.tsx";
 import PinManager from "../components/PinManager.tsx";
+import ResetPinButton from "@/components/ResetPinButton.tsx";
 import api from "@/api/axiosInstance.ts";
 
 interface Transaction {
@@ -19,7 +20,7 @@ interface Transaction {
 }
 
 export default function UserDashboard() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [balance, setBalance] = useState<number>(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,7 +31,6 @@ export default function UserDashboard() {
 
   const limit = 6;
   const API = import.meta.env.VITE_API_BASE;
-  console.log(user);
 
   // Fetching User Data
   async function fetchData() {
@@ -80,7 +80,7 @@ export default function UserDashboard() {
     }
   }, [user?.hasPin]);
 
-  // --- UI Rendering ---
+  // --- Loading / Error States ---
   if (loading)
     return (
       <div className="flex h-screen items-center justify-center text-gray-600">
@@ -101,15 +101,12 @@ export default function UserDashboard() {
       </div>
     );
 
+  // --- UI ---
   return (
-    <div className="p-4 md:p-8 flex flex-col items-center">
-      <div className="w-full max-w-5xl">
-        <h1 className="text-2xl font-semibold text-gray-800 mb-2 text-center md:text-left">
-          Welcome, {user?.name}
-        </h1>
-
-        {/* PIN Management */}
-        <div className="flex justify-center md:justify-end mb-6">
+    <div className="min-h-screen flex flex-col">
+      <nav className="w-full px-4 py-3 flex justify-end items-center md:px-8">
+        {/* Desktop Controls */}
+        <div className="hidden md:flex  items-center gap-3">
           <PinManager
             wallet={{
               walletNumber: user?.walletNumber || "",
@@ -117,73 +114,88 @@ export default function UserDashboard() {
             }}
             autoOpen={shouldPromptPin}
           />
+
+          {user?.walletNumber && (
+            <ResetPinButton
+              walletNumber={user.walletNumber}
+              onResetComplete={() => setShouldPromptPin(true)}
+            />
+          )}
         </div>
+      </nav>
 
-        {/* Balance + Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 justify-items-center">
-          <div className="w-full max-w-sm">
-            <BalanceCard balance={balance} />
+      {/* Main Dashboard Content */}
+      <main className="flex-grow p-4 md:p-8 flex flex-col items-center">
+        <div className="w-full max-w-5xl">
+          {/* Balance + Actions */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 justify-items-center">
+            <div className="w-full max-w-sm">
+              <BalanceCard balance={balance} />
+            </div>
+            <div className="w-full max-w-sm">
+              <QuickActions refresh={fetchData} />
+            </div>
+            <div className="w-full max-w-sm">
+              <AirtimeRechargeCard refresh={fetchData} />
+            </div>
+            <div className="w-full max-w-sm">
+              <BillPaymentsCard refresh={fetchData} />
+            </div>
           </div>
-          <div className="w-full max-w-sm">
-            <QuickActions refresh={fetchData} />
-          </div>
-          <div className="w-full max-w-sm">
-            <AirtimeRechargeCard refresh={fetchData} />
-          </div>
-          <div className="w-full max-w-sm">
-            <BillPaymentsCard refresh={fetchData} />
-          </div>
-        </div>
 
-        <div className="mt-10">
-          <h2 className="text-lg font-semibold mb-3 text-gray-700 text-center md:text-left">
-            Recent Transactions
-          </h2>
+          {/* Transactions */}
+          <div className="mt-10">
+            <h2 className="text-lg font-semibold mb-3 text-gray-700 text-center md:text-left">
+              Recent Transactions
+            </h2>
 
-          <TransactionsList transactions={transactions} />
+            <TransactionsList transactions={transactions} />
 
-          {/*Pagination Controls */}
-          <div className="flex justify-center items-center gap-2 mt-6 flex-wrap">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className={`px-3 py-1.5 cursor-pointer rounded-lg text-sm border transition ${
-                page === 1
-                  ? "bg-purple-100 text-purple-400 cursor-not-allowed"
-                  : "bg-purple-200 hover:bg-purple-300"
-              }`}
-            >
-              Prev
-            </button>
-
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => (
+            {/*Pagination Controls */}
+            <div className="flex justify-center items-center gap-2 mt-6 flex-wrap">
               <button
-                key={num}
-                onClick={() => setPage(num)}
-                className={`px-3 py-1.5 cursor-pointer rounded-lg text-sm transition ${
-                  num === page
-                    ? "bg-purple-600 text-white font-semibold"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className={`px-3 py-1.5 cursor-pointer rounded-lg text-sm border transition ${
+                  page === 1
+                    ? "bg-purple-100 text-purple-400 cursor-not-allowed"
                     : "bg-purple-200 hover:bg-purple-300"
                 }`}
               >
-                {num}
+                Prev
               </button>
-            ))}
 
-            <button
-              onClick={() => setPage((p) => p + 1)}
-              disabled={transactions.length < limit}
-              className={`px-3 py-1.5 rounded-lg cursor-pointer text-sm border transition ${
-                transactions.length < limit
-                  ? "bg-purple-100 text-purple-400 cursor-not-allowed"
-                  : "bg-purple-200 hover:bg-purple-300"
-              }`}
-            >
-              Next
-            </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (num) => (
+                  <button
+                    key={num}
+                    onClick={() => setPage(num)}
+                    className={`px-3 py-1.5 cursor-pointer rounded-lg text-sm transition ${
+                      num === page
+                        ? "bg-purple-600 text-white font-semibold"
+                        : "bg-purple-200 hover:bg-purple-300"
+                    }`}
+                  >
+                    {num}
+                  </button>
+                )
+              )}
+
+              <button
+                onClick={() => setPage((p) => p + 1)}
+                disabled={transactions.length < limit}
+                className={`px-3 py-1.5 rounded-lg cursor-pointer text-sm border transition ${
+                  transactions.length < limit
+                    ? "bg-purple-100 text-purple-400 cursor-not-allowed"
+                    : "bg-purple-200 hover:bg-purple-300"
+                }`}
+              >
+                Next
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

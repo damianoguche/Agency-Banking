@@ -43,7 +43,8 @@ TransactionHistory.belongsTo(Wallet, {
 
 TransactionHistory.hasMany(LedgerEntry, {
   foreignKey: "transaction_reference",
-  sourceKey: "reference"
+  sourceKey: "reference",
+  onDelete: "CASCADE"
 });
 
 LedgerEntry.belongsTo(TransactionHistory, {
