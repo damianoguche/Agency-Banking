@@ -65,7 +65,7 @@ export default function LoginPage() {
           x: shake ? [0, -10, 10, -10, 10, 0] : 0
         }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="w-full border border-purple-500 max-w-md rounded-2xl bg-white dark:bg-gray-900 p-8 shadow-lg dark:shadow-gray-700/30 transition-colors duration-300"
+        className="w-96 border border-purple-500 max-w-md rounded-2xl bg-white dark:bg-gray-900 p-8 shadow-lg dark:shadow-gray-700/30 transition-colors duration-300"
       >
         <h1 className="mb-6 text-center text-3xl font-bold text-purple-800 dark:text-gray-100">
           Sign In

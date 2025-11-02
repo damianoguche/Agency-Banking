@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
@@ -7,20 +7,29 @@ import api from "@/api/axiosInstance.ts";
 interface ResetPinButtonProps {
   walletNumber: string;
   onResetComplete?: () => void;
+  onModalToggle?: (open: boolean) => void; // New prop
 }
 
-export default function ResetPinButton({ walletNumber }: ResetPinButtonProps) {
+export default function ResetPinButton({
+  walletNumber,
+  onResetComplete,
+  onModalToggle
+}: ResetPinButtonProps) {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
 
-  const API = import.meta.env.VITE_API_BASE;
+  // Notify parent whenever modal open state changes
+  useEffect(() => {
+    onModalToggle?.(open);
+  }, [open, onModalToggle]);
 
   const handleReset = async () => {
     setLoading(true);
     try {
-      await api.post(`${API}/wallet/${walletNumber}/reset-pin`);
+      await api.post(`/wallet/${walletNumber}/reset-pin`);
       toast.success("PIN reset successful! Please set a new PIN.");
       setOpen(false);
+      onResetComplete?.();
     } catch (err: any) {
       console.error(err);
       toast.error(err?.response?.data?.message || "PIN reset failed");
@@ -34,6 +43,7 @@ export default function ResetPinButton({ walletNumber }: ResetPinButtonProps) {
       <DialogTrigger asChild>
         <Button
           variant="outline"
+          size="sm"
           className="border-purple-500 text-purple-600 hover:bg-purple-100 cursor-pointer"
         >
           Reset PIN
