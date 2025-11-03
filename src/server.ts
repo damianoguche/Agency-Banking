@@ -2,12 +2,12 @@ import dotenv from "dotenv";
 dotenv.config();
 import express from "express";
 import cors from "cors";
-import walletRoutes from "./routes/walletRoutes.ts";
-import sequelize from "./config/db.ts";
-import adminRoutes from "./routes/adminRoutes.ts";
-import customerRoutes from "./routes/customerRoutes.ts";
-import transactionRoutes from "./routes/transactionRoutes.ts";
-import reconcileRoutes from "./routes/reconRoutes.ts";
+import walletRoutes from "./routes/walletRoutes";
+import sequelize from "./config/db";
+import adminRoutes from "./routes/adminRoutes";
+import customerRoutes from "./routes/customerRoutes";
+import transactionRoutes from "./routes/transactionRoutes";
+import reconcileRoutes from "./routes/reconRoutes";
 import path from "path";
 
 const app = express();
