@@ -3,7 +3,7 @@ dotenv.config();
 import express from "express";
 import cors from "cors";
 import walletRoutes from "./routes/walletRoutes.ts";
-import sequelize from "./config/db";
+import sequelize from "./config/db.ts";
 import adminRoutes from "./routes/adminRoutes.ts";
 import customerRoutes from "./routes/customerRoutes.ts";
 import transactionRoutes from "./routes/transactionRoutes.ts";
