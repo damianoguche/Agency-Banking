@@ -12,7 +12,7 @@ import reconcileRoutes from "./routes/reconRoutes.ts";
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const allowedOrigins = ["http://localhost:5173", "http://127.0.0.1:5500"];
+const allowedOrigins = ["http://localhost:5173"];
 
 app.use(
   cors({
