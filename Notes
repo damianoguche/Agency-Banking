@@ -113,3 +113,7 @@ One-to-One Customer.hasOne(Wallet) Singular ("wallet") Each customer has one wal
 Belongs-To Wallet.belongsTo(Customer) Singular ("customer") Each wallet belongs to one customer
 One-to-Many Customer.hasMany(Wallet) Plural ("wallets") Each customer has many wallets
 Many-to-Many Student.belongsToMany(Course) Plural ("courses") Each student belongs to many courses, and vice versa
+
+"seed": "node --loader ts-node/esm ./customer_wallet_seed.ts",
+"recon": "node --loader ts-node/esm ./src/j/robseconcileLedger.ts",
+"reconcile": "node --loader ts-node/esm ./src/scripts/reconcile.ts"

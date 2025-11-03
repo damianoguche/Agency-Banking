@@ -8,6 +8,7 @@ import adminRoutes from "./routes/adminRoutes.ts";
 import customerRoutes from "./routes/customerRoutes.ts";
 import transactionRoutes from "./routes/transactionRoutes.ts";
 import reconcileRoutes from "./routes/reconRoutes.ts";
+import path from "path";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -54,6 +55,17 @@ app.use("/api/wallet", walletRoutes);
     console.error("Database connection error:", err);
   }
 })();
+
+// Serve React static files
+const __dirnamePath = path.resolve();
+const frontendPath = path.join(__dirnamePath, "../frontend/dist");
+
+app.use(express.static(frontendPath));
+
+// Serve React index.html for all non-API routes
+app.get(/.*/, (_, res) => {
+  res.sendFile(path.join(frontendPath, "index.html"));
+});
 
 const server = app.listen(PORT, () =>
   console.log(`Server running on port ${PORT}`)

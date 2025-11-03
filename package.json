@@ -6,11 +6,9 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon --watch src --exec \"node --loader ts-node/esm\" src/server.ts",
-    "build": "tsc",
-    "start": "node dist/server.js",
-    "seed": "node --loader ts-node/esm ./customer_wallet_seed.ts",
-    "recon": "node --loader ts-node/esm ./src/jobs/reconcileLedger.ts",
-    "reconcile": "node --loader ts-node/esm ./src/scripts/reconcile.ts"
+    "build": "tsc && npm run build:frontend",
+    "build:frontend": "cd ../frontend && npm install && npm run build",
+    "start": "node dist/server.js"
   },
   "keywords": [],
   "author": "",
