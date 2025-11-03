@@ -11,11 +11,10 @@
     "module": "esnext",
     "target": "esnext",
     "allowSyntheticDefaultImports": true,
-    "types": [],
     "moduleResolution": "node",
     // For nodejs:
     // "lib": ["esnext"],
-    // "types": ["node"],
+     "types": ["node"],
     // and npm install -D @types/node
 
     // Other Outputs
