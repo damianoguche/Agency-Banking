@@ -10,20 +10,26 @@ interface PinManagerProps {
     hasPin: boolean;
   };
   autoOpen?: boolean;
+  onModalToggle?: (open: boolean) => void; // 🔹 Notify parent when modal opens/closes
 }
 
 export default function PinManager({
   wallet,
-  autoOpen = false
+  autoOpen = false,
+  onModalToggle
 }: PinManagerProps) {
   const [open, setOpen] = useState(autoOpen);
   const [walletState, setWalletState] = useState(wallet);
+
+  // Notify Navbar when dialog opens/closes
+  useEffect(() => {
+    onModalToggle?.(open);
+  }, [open, onModalToggle]);
 
   useEffect(() => {
     if (autoOpen) setOpen(true);
   }, [autoOpen]);
 
-  // Update internal wallet state if parent updates it
   useEffect(() => {
     setWalletState(wallet);
   }, [wallet]);
@@ -32,15 +38,18 @@ export default function PinManager({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button
-          variant={"outline"}
-          size={"sm"}
+          variant="outline"
+          size="sm"
           className="border-purple-500 text-purple-600 hover:bg-purple-100 rounded-lg cursor-pointer"
         >
           {walletState.hasPin ? "Change PIN" : "Set PIN"}
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-md bg-white w-96">
+      <DialogContent
+        className="max-w-md bg-white w-96"
+        onClick={(e) => e.stopPropagation()} // 🔹 Prevent clicks inside from being treated as outside
+      >
         {walletState.hasPin ? (
           <ChangePinForm
             walletNumber={walletState.walletNumber}
@@ -50,7 +59,6 @@ export default function PinManager({
           <SetPinForm
             walletNumber={walletState.walletNumber}
             onSuccess={() => {
-              // Close dialog and update UI immediately
               setOpen(false);
               setWalletState((prev) => ({ ...prev, hasPin: true }));
             }}

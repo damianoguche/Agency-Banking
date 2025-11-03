@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
-import axios from "axios";
-import { useAuth } from "../hooks/useAuth";
+import api from "@/api/axiosInstance";
 
 interface AirtimeForm {
   phone: string;
@@ -17,17 +16,11 @@ export default function AirtimeRechargeCard({
 }) {
   const { register, handleSubmit, reset } = useForm<AirtimeForm>();
   const [loading, setLoading] = useState(false);
-  const API = import.meta.env.VITE_API_BASE;
-
-  const { token } = useAuth();
 
   const onSubmit = async (data: AirtimeForm) => {
     setLoading(true);
     try {
-      const headers = { Authorization: `Bearer ${token}` };
-      await axios.post(`${API}/transactions/airtime/recharge`, data, {
-        headers
-      });
+      await api.post(`/transactions/airtime/recharge`, data);
       toast.success("Airtime recharge successful!");
       refresh();
       reset();

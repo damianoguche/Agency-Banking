@@ -11,11 +11,10 @@ interface Audit {
 
 export default function AuditTrail() {
   const [audits, setAudits] = useState<Audit[]>([]);
-  const API = import.meta.env.VITE_API_BASE;
 
   async function loadAudits() {
     try {
-      const res = await api.get(`${API}/admin/audit`);
+      const res = await api.get(`/admin/audit`);
       setAudits(res.data.audits || []);
     } catch (err) {
       console.error("Failed to load audit trail", err);

@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
-import axios from "axios";
-import { useAuth } from "../hooks/useAuth";
+import api from "@/api/axiosInstance";
 
 interface BillPaymentForm {
   billType: string;
@@ -11,17 +10,13 @@ interface BillPaymentForm {
 }
 
 export default function BillPaymentsCard({ refresh }: { refresh: () => void }) {
-  const API = import.meta.env.VITE_API_BASE;
-  const { token } = useAuth();
-
   const { register, handleSubmit, reset } = useForm<BillPaymentForm>();
   const [loading, setLoading] = useState(false);
 
   const onSubmit = async (data: BillPaymentForm) => {
     setLoading(true);
     try {
-      const headers = { Authorization: `Bearer ${token}` };
-      await axios.post(`${API}/transactions/bills/pay`, data, { headers });
+      await api.post(`/transactions/bills/pay`, data);
       toast.success("Bill payment successful!");
       refresh();
       reset();

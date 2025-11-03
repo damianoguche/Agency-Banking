@@ -9,11 +9,9 @@ export default function UsersList({
   users: User[];
   refresh: () => void;
 }) {
-  const API = import.meta.env.VITE_API_BASE;
-
   async function changeRole(id: string, role: string) {
     try {
-      await api.put(`${API}/admin/customers/${id}/role`, { role });
+      await api.put(`/admin/customers/${id}/role`, { role });
       toast.success("Role updated");
       refresh();
     } catch (err: any) {
