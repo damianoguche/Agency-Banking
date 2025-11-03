@@ -5,7 +5,7 @@
     "outDir": "./dist",
     "allowImportingTsExtensions": true,
     "typeRoots": ["./node_modules/@types", "./src/types"],
-    "noEmit": true,
+    "noEmit": false,
     "emitDeclarationOnly": true,
     // Environment Settings
     "module": "esnext",
