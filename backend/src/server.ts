@@ -13,25 +13,23 @@ import path from "path";
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const allowedOrigins = [
-  "https://securebank-sx5n.onrender.com",
-  "http://localhost:5173"
-];
+// const allowedOrigins = ["https://securebank-sx5n.onrender.com/api/"];
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.warn("Blocked by CORS:", origin);
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"]
-  })
-);
+// app.use(
+//   cors({
+//     origin: function (origin, callback) {
+//       if (!origin || allowedOrigins.includes(origin)) {
+//         callback(null, true);
+//       } else {
+//         console.warn("Blocked by CORS:", origin);
+//         callback(new Error("Not allowed by CORS"));
+//       }
+//     },
+//     methods: ["GET", "POST", "PUT", "DELETE"],
+//     allowedHeaders: ["Content-Type", "Authorization"]
+//   })
+// );
+app.use(cors({ origin: true, credentials: true }));
 
 // Parse JSON bodies
 app.use(express.json());
