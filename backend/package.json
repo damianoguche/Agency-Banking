@@ -8,7 +8,7 @@
     "dev": "nodemon --watch src --exec \"node --loader ts-node/esm\" src/server.ts",
     "build": "tsc && npm run build:frontend",
     "build:frontend": "cd ../frontend && npm install && npm run build",
-    "start": "node backend/dist/server.js"
+    "start": "node dist/server.js"
   },
   "keywords": [],
   "author": "",
