@@ -13,7 +13,10 @@ import path from "path";
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const allowedOrigins = ["http://localhost:5173"];
+const allowedOrigins = [
+  "https://securebank-sx5n.onrender.com",
+  "http://localhost:5173"
+];
 
 app.use(
   cors({
