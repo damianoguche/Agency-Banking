@@ -6,6 +6,7 @@
     "allowImportingTsExtensions": true,
     "typeRoots": ["./node_modules/@types", "./src/types"],
     "noEmit": false,
+    "emitDeclarationOnly": false,
     // Environment Settings
     "module": "esnext",
     "target": "esnext",
