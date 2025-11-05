@@ -59,15 +59,15 @@ app.use("/api/wallet", walletRoutes);
 })();
 
 // Serve React static files
-// const __dirnamePath = path.resolve();
-// const frontendPath = path.join(__dirnamePath, "../frontend/dist");
+const __dirnamePath = path.resolve();
+const frontendPath = path.join(__dirnamePath, "../frontend/dist");
 
-// app.use(express.static(frontendPath));
+app.use(express.static(frontendPath));
 
-// // Serve React index.html for all non-API routes
-// app.get(/.*/, (_, res) => {
-//   res.sendFile(path.join(frontendPath, "index.html"));
-// });
+// Serve React index.html for all non-API routes
+app.get(/.*/, (_, res) => {
+  res.sendFile(path.join(frontendPath, "index.html"));
+});
 
 const server = app.listen(PORT, () =>
   console.log(`Server running on port ${PORT}`)
