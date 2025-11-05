@@ -10,7 +10,7 @@ interface PinManagerProps {
     hasPin: boolean;
   };
   autoOpen?: boolean;
-  onModalToggle?: (open: boolean) => void; // 🔹 Notify parent when modal opens/closes
+  onModalToggle?: (open: boolean) => void; // Notify parent when modal opens/closes
 }
 
 export default function PinManager({

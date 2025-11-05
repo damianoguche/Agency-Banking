@@ -3,6 +3,8 @@ import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import api from "@/api/axiosInstance";
+import { useAuth } from "@/hooks/useAuth";
+import { User } from "@/types/User";
 
 interface SetPinFormProps {
   walletNumber: string;
@@ -25,7 +27,7 @@ export default function SetPinForm({
     formState: { errors, isSubmitting }
   } = useForm<SetPinFields>();
 
-  const API = import.meta.env.VITE_API_BASE;
+  const { user, setUser } = useAuth();
 
   const onSubmit = async (data: SetPinFields) => {
     if (data.pin !== data.confirmPin) {
@@ -34,11 +36,12 @@ export default function SetPinForm({
     }
 
     try {
-      await api.post(`${API}/wallet/set-pin`, {
+      await api.post(`/wallet/set-pin`, {
         walletNumber,
         pin: data.pin
       });
       toast.success("Transaction PIN set");
+      setUser({ ...(user as User), hasPin: true });
       onSuccess?.();
     } catch (err: any) {
       const msg = err.response?.data?.message || "Failed to set PIN";

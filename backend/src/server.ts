@@ -13,7 +13,7 @@ import path from "path";
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// const allowedOrigins = ["https://securebank-sx5n.onrender.com/api/"];
+// const allowedOrigins = ["http://localhost:5173"];
 
 // app.use(
 //   cors({
@@ -29,6 +29,7 @@ const PORT = process.env.PORT || 3000;
 //     allowedHeaders: ["Content-Type", "Authorization"]
 //   })
 // );
+
 app.use(cors({ origin: true, credentials: true }));
 
 // Parse JSON bodies
@@ -58,15 +59,15 @@ app.use("/api/wallet", walletRoutes);
 })();
 
 // Serve React static files
-const __dirnamePath = path.resolve();
-const frontendPath = path.join(__dirnamePath, "../frontend/dist");
+// const __dirnamePath = path.resolve();
+// const frontendPath = path.join(__dirnamePath, "../frontend/dist");
 
-app.use(express.static(frontendPath));
+// app.use(express.static(frontendPath));
 
-// Serve React index.html for all non-API routes
-app.get(/.*/, (_, res) => {
-  res.sendFile(path.join(frontendPath, "index.html"));
-});
+// // Serve React index.html for all non-API routes
+// app.get(/.*/, (_, res) => {
+//   res.sendFile(path.join(frontendPath, "index.html"));
+// });
 
 const server = app.listen(PORT, () =>
   console.log(`Server running on port ${PORT}`)

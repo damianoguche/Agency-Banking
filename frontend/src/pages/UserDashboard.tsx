@@ -20,7 +20,7 @@ interface Transaction {
 }
 
 export default function UserDashboard() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [balance, setBalance] = useState<number>(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,7 +30,6 @@ export default function UserDashboard() {
   const [shouldPromptPin, setShouldPromptPin] = useState(false);
 
   const limit = 6;
-  const API = import.meta.env.VITE_API_BASE;
 
   // Fetching User Data
   async function fetchData() {
@@ -41,9 +40,9 @@ export default function UserDashboard() {
 
     try {
       const [balanceRes, txnRes] = await Promise.all([
-        api.get(`${API}/customers/${user.walletNumber}/balance`),
+        api.get(`/customers/${user.walletNumber}/balance`),
         api.get(
-          `${API}/transactions/${user.walletNumber}/recentTransactions?page=${page}&limit=${limit}`
+          `/transactions/${user.walletNumber}/recentTransactions?page=${page}&limit=${limit}`
         )
       ]);
 

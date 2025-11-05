@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 
 interface AuthContextType {
   user: User | null;
+  setUser: React.Dispatch<React.SetStateAction<User | null>>;
   loading: boolean;
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
@@ -112,7 +113,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, token, login, register, logout }}
+      value={{ user, setUser, loading, token, login, register, logout }}
     >
       {children}
     </AuthContext.Provider>
