@@ -43,7 +43,7 @@ export async function sendWalletEmail(
   walletNumber: string
 ) {
   await resend.emails.send({
-    from: "SecureBank <noreply@securebank.com>",
+    from: `"SecureBank <${process.env.SMTP_USER}>"`,
     to,
     subject: "Welcome to SecureBank — Your Wallet Has Been Created",
     html: `
