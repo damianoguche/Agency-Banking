@@ -15,6 +15,7 @@ import jwt from "jsonwebtoken";
 import type { SignOptions } from "jsonwebtoken";
 import { hashPassword } from "../utils/passwordUtils.ts";
 import ms from "ms";
+import { sendWalletEmail } from "../utils/mailer.ts";
 
 /**
  * POST /api/customers/register
@@ -57,6 +58,16 @@ export const createCustomer = async (req: Request, res: Response) => {
     );
 
     await t?.commit();
+
+    // Send wallet creation email (non-blocking)
+    sendWalletEmail(customer.email!, customer.fullName, wallet.walletNumber)
+      .then(() => console.log(`Wallet email sent to ${customer.email}`))
+      .catch((err) =>
+        console.error(
+          `Failed to send wallet email to ${customer.email}:`,
+          err.message
+        )
+      );
 
     return res.status(201).json({
       message: "Customer and wallet created successfully",
