@@ -1,23 +1,49 @@
-import nodemailer from "nodemailer";
+// import nodemailer from "nodemailer";
+
+// export async function sendWalletEmail(
+//   to: string,
+//   fullName: string,
+//   walletNumber: string
+// ) {
+//   // Use environment variables for safety
+//   const transporter = nodemailer.createTransport({
+//     host: process.env.SMTP_HOST!,
+//     port: Number(process.env.SMTP_PORT || 465),
+//     secure: true, // true for 465, false for 587
+//     auth: {
+//       user: process.env.SMTP_USER!,
+//       pass: process.env.SMTP_PASS!
+//     }
+//   });
+
+//   const mailOptions = {
+//     from: "SecureBank",
+//     to,
+//     subject: "Welcome to SecureBank — Your Wallet Has Been Created",
+//     html: `
+//       <h3>Hello ${fullName},</h3>
+//       <p>Welcome to <b>SecureBank</b>! Your wallet has been successfully created.</p>
+//       <p><strong>Wallet Number:</strong> ${walletNumber}</p>
+//       <p>You can now log in to your account and start using your wallet for secure transactions.</p>
+//       <br/>
+//       <p>Best regards,<br/>The SecureBank Team</p>
+//     `
+//   };
+
+//   await transporter.sendMail(mailOptions);
+// }
+
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function sendWalletEmail(
   to: string,
   fullName: string,
   walletNumber: string
 ) {
-  // Use environment variables for safety
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST!,
-    port: Number(process.env.SMTP_PORT || 465),
-    secure: true, // true for 465, false for 587
-    auth: {
-      user: process.env.SMTP_USER!,
-      pass: process.env.SMTP_PASS!
-    }
-  });
-
-  const mailOptions = {
-    from: `"SecureBank" <${process.env.SMTP_USER}>`,
+  await resend.emails.send({
+    from: "SecureBank <noreply@securebank.com>",
     to,
     subject: "Welcome to SecureBank — Your Wallet Has Been Created",
     html: `
@@ -28,7 +54,5 @@ export async function sendWalletEmail(
       <br/>
       <p>Best regards,<br/>The SecureBank Team</p>
     `
-  };
-
-  await transporter.sendMail(mailOptions);
+  });
 }
